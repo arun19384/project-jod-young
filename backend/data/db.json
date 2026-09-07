@@ -1,0 +1,30 @@
+{
+  "monthlyBudget": 58700,
+  "transactions": [
+    {
+      "id": "tx-1788774005201822500",
+      "t": "บาบีก้อน",
+      "c": "อื่นๆ",
+      "tint": "#8a8780",
+      "a": 200,
+      "acct": "Main",
+      "date": "2026-09-07",
+      "when": "วันนี้ 16:40",
+      "income": false,
+      "today": true
+    }
+  ],
+  "debts": [],
+  "accounts": [
+    {
+      "id": "acct-main",
+      "name": "เงินสด/บัญชีหลัก",
+      "role": "ใช้จ่ายประจำวัน",
+      "amt": 0,
+      "tint": "#d97757"
+    }
+  ],
+  "cards": [],
+  "fixed": [],
+  "plans": []
+}

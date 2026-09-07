@@ -1,0 +1,206 @@
+{
+  "monthlyBudget": 45000,
+  "transactions": [
+    {
+      "id": "tx-1",
+      "t": "ข้าวมันไก่ ตรงข้ามออฟฟิศ",
+      "c": "อาหาร",
+      "tint": "#d97757",
+      "a": 65,
+      "acct": "Main",
+      "date": "2026-09-07",
+      "when": "วันนี้ 12:20",
+      "income": false,
+      "today": true
+    },
+    {
+      "id": "tx-2",
+      "t": "ลาเต้ร้อน",
+      "c": "กาแฟ",
+      "tint": "#c9a227",
+      "a": 120,
+      "acct": "Main",
+      "date": "2026-09-07",
+      "when": "วันนี้ 08:40",
+      "income": false,
+      "today": true
+    },
+    {
+      "id": "tx-3",
+      "t": "เติมน้ำมัน ปตท",
+      "c": "น้ำมันรถ",
+      "tint": "#7fa3c9",
+      "a": 900,
+      "acct": "Main",
+      "date": "2026-09-06",
+      "when": "เมื่อวาน",
+      "income": false,
+      "today": false
+    },
+    {
+      "id": "tx-4",
+      "t": "ออกค่าหมูกระทะให้พี่นก",
+      "c": "ออกให้ก่อน",
+      "tint": "#c9a227",
+      "a": 640,
+      "acct": "Main",
+      "date": "2026-09-06",
+      "when": "เมื่อวาน",
+      "income": false,
+      "today": false
+    },
+    {
+      "id": "tx-5",
+      "t": "โอนเข้าเงินเก็บ",
+      "c": "เงินเก็บ",
+      "tint": "#6c9a76",
+      "a": 5000,
+      "acct": "Saving",
+      "date": "2026-09-04",
+      "when": "4 ก.ย.",
+      "income": false,
+      "today": false
+    },
+    {
+      "id": "tx-6",
+      "t": "เงินเดือน",
+      "c": "รายรับ",
+      "tint": "#6c9a76",
+      "a": 45000,
+      "acct": "Main",
+      "date": "2026-09-01",
+      "when": "1 ก.ย.",
+      "income": true,
+      "today": false
+    }
+  ],
+  "debts": [
+    {
+      "id": "debt-1",
+      "name": "พี่นก",
+      "what": "หมูกระทะ · 6 ก.ย.",
+      "a": 640,
+      "cleared": false
+    },
+    {
+      "id": "debt-2",
+      "name": "ต้น",
+      "what": "ค่าที่พัก Sapporo · 28 ส.ค.",
+      "a": 1000,
+      "cleared": false
+    },
+    {
+      "id": "debt-3",
+      "name": "เมย์",
+      "what": "ค่าแท็กซี่ · 20 ส.ค.",
+      "a": 180,
+      "cleared": true
+    }
+  ],
+  "accounts": [
+    {
+      "id": "acct-1",
+      "name": "Main",
+      "role": "ใช้จ่าย · ค่าน้ำมันรถ",
+      "amt": 18240,
+      "tint": "#d97757"
+    },
+    {
+      "id": "acct-2",
+      "name": "Secondnary",
+      "role": "สำรอง",
+      "amt": 6120,
+      "tint": "#c9a227"
+    },
+    {
+      "id": "acct-3",
+      "name": "Credit",
+      "role": "โอนไว้จ่ายบัตร",
+      "amt": 21500,
+      "tint": "#7fa3c9"
+    },
+    {
+      "id": "acct-4",
+      "name": "Saving",
+      "role": "เงินเก็บ · ห้ามแตะ",
+      "amt": 132900,
+      "tint": "#6c9a76"
+    }
+  ],
+  "cards": [
+    {
+      "id": "a",
+      "name": "บัตร A",
+      "cut": "15",
+      "due": "5 ต.ค.",
+      "amt": 12480,
+      "pct": 62,
+      "status": "อีก 8 วันตัด",
+      "tint": "#d97757",
+      "chipBg": "rgba(255,255,255,0.05)",
+      "pdfName": "statement-a-09.pdf",
+      "pdfLabel": "แนบ PDF เทียบยอด",
+      "pdfSummary": "1 รายการไม่ตรงกับที่จดไว้ แตะเพื่อจดเพิ่ม",
+      "lines": [
+        { "name": "ลาเต้ร้อน", "amt": 120, "ok": true, "mark": "✓", "bg": "#6c9a76", "tint": "#d0cdc2" },
+        { "name": "เติมน้ำมัน ปตท", "amt": 900, "ok": true, "mark": "✓", "bg": "#6c9a76", "tint": "#d0cdc2" },
+        { "name": "Netflix", "amt": 419, "ok": false, "mark": "?", "bg": "#c9a227", "tint": "#c9a227" },
+        { "name": "ผ่อน TV งวด 4", "amt": 1500, "ok": true, "mark": "✓", "bg": "#6c9a76", "tint": "#d0cdc2" }
+      ]
+    },
+    {
+      "id": "b",
+      "name": "บัตร B",
+      "cut": "25",
+      "due": "15 ต.ค.",
+      "amt": 6900,
+      "pct": 34,
+      "status": "อีก 18 วันตัด",
+      "tint": "#c9a227",
+      "chipBg": "rgba(255,255,255,0.05)",
+      "pdfName": "statement-b-09.pdf",
+      "pdfLabel": "แนบ PDF เทียบยอด",
+      "pdfSummary": "1 รายการไม่ตรงกับที่จดไว้ แตะเพื่อจดเพิ่ม",
+      "lines": [
+        { "name": "ประกันรถยนต์", "amt": 2200, "ok": true, "mark": "✓", "bg": "#6c9a76", "tint": "#d0cdc2" },
+        { "name": "ยาง Yokohama งวด 3", "amt": 869, "ok": true, "mark": "✓", "bg": "#6c9a76", "tint": "#d0cdc2" },
+        { "name": "ค่าธรรมเนียม", "amt": 107, "ok": false, "mark": "?", "bg": "#c9a227", "tint": "#c9a227" }
+      ]
+    },
+    {
+      "id": "c",
+      "name": "บัตร C",
+      "cut": "5",
+      "due": "25 ก.ย.",
+      "amt": 3150,
+      "pct": 88,
+      "status": "รอบปิดแล้ว",
+      "tint": "#7fa3c9",
+      "chipBg": "rgba(255,255,255,0.05)",
+      "pdfName": "statement-c-09.pdf",
+      "pdfLabel": "แนบ PDF เทียบยอด",
+      "pdfSummary": "ตรงกันทุกรายการ",
+      "lines": [
+        { "name": "ที่พัก Sapporo งวด 2", "amt": 1000, "ok": true, "mark": "✓", "bg": "#6c9a76", "tint": "#d0cdc2" },
+        { "name": "ลู่วิ่งไฟฟ้า งวด 6", "amt": 2000, "ok": true, "mark": "✓", "bg": "#6c9a76", "tint": "#d0cdc2" }
+      ]
+    }
+  ],
+  "fixed": [
+    { "id": "fix-1", "name": "โทรศัพท์", "amt": 426, "day": "8", "done": true },
+    { "id": "fix-2", "name": "เน็ตบ้าน", "amt": 426, "day": "10", "done": true },
+    { "id": "fix-3", "name": "ประกันสังคม", "amt": 3006, "day": "15", "done": false },
+    { "id": "fix-4", "name": "ค่าไฟ", "amt": 2500, "day": "20", "done": false },
+    { "id": "fix-5", "name": "ให้แม่", "amt": 3000, "day": "1", "done": true }
+  ],
+  "plans": [
+    { "id": "plan-1", "name": "ประกันสะสมทรัพย์", "a": 2600, "paid": 9, "total": 12, "note": "เหลือ 7,800 บาท", "endsAt": "จบ ธ.ค. 2569 · อีก 3 งวด" },
+    { "id": "plan-2", "name": "ประกันรถยนต์", "a": 2200, "paid": 3, "total": 10, "note": "เหลือ 15,400 บาท", "endsAt": "จบ เม.ย. 2570 · อีก 7 งวด" },
+    { "id": "plan-3", "name": "TV", "a": 1500, "paid": 4, "total": 10, "note": "เหลือ 9,000 บาท", "endsAt": "จบ มี.ค. 2570 · อีก 6 งวด" },
+    { "id": "plan-4", "name": "ยาง Yokohama", "a": 869, "paid": 3, "total": 6, "note": "เหลือ 2,607 บาท", "endsAt": "จบ ธ.ค. 2569 · อีก 3 งวด" },
+    { "id": "plan-5", "name": "บัตรเครดิต", "a": 2000, "paid": 5, "total": 10, "note": "เหลือ 10,000 บาท", "endsAt": "จบ ก.พ. 2570 · อีก 5 งวด" },
+    { "id": "plan-6", "name": "ลู่วิ่งไฟฟ้า", "a": 2000, "paid": 6, "total": 10, "note": "เหลือ 8,000 บาท", "endsAt": "จบ ม.ค. 2570 · อีก 4 งวด" },
+    { "id": "plan-7", "name": "JAPAN", "a": 3000, "paid": 2, "total": 6, "note": "เหลือ 12,000 บาท", "endsAt": "จบ ม.ค. 2570 · อีก 4 งวด" },
+    { "id": "plan-8", "name": "ที่พัก Sapporo", "a": 1000, "paid": 2, "total": 4, "note": "เหลือ 2,000 บาท", "endsAt": "จบ พ.ย. 2569 · อีก 2 งวด" }
+  ]
+}

@@ -1,0 +1,41 @@
+﻿# Binaries & Executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+backend/server.exe
+backend/test_build.exe
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+vendor/
+
+# Build artifacts
+dist/
+frontend/dist/
+.vite/
+frontend/.vite/
+
+# Environment and sensitive configuration
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/data/config.json
+
+# Local runtime data
+backend/data/store.json
+
+# Logs & temporary files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
