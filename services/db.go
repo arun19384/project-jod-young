@@ -73,7 +73,36 @@ func GetDB() *DBService {
 	return globalDB
 }
 
+func loadEnvFile() {
+	candidates := []string{".env", "../.env", filepath.Join("backend", ".env")}
+	for _, p := range candidates {
+		data, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) == 2 {
+				k := strings.TrimSpace(parts[0])
+				v := strings.TrimSpace(parts[1])
+				v = strings.Trim(v, "\"'")
+				if os.Getenv(k) == "" {
+					_ = os.Setenv(k, v)
+				}
+			}
+		}
+		break
+	}
+}
+
 func (d *DBService) loadConfig() {
+	loadEnvFile()
+
 	defaultURL := "mysql://2S6Vrj3kFBYbSKh.root:<PASSWORD>@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/sys"
 
 	if envURL := os.Getenv("DATABASE_URL"); envURL != "" {
