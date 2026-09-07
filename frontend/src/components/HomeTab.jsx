@@ -41,7 +41,7 @@ export default function HomeTab({
   const allWallets = [
     ...accounts.map((a) => ({
       id: a.id,
-      name: a.name,
+      name: (a.name === 'เงินสด/บัญชีหลัก' || a.name === 'Main') ? 'บัญชีหลัก' : a.name,
       role: a.role || 'เงินเดือน/ใช้จ่าย',
       amt: a.amt || 0,
       tint: a.tint || '#6c9a76',

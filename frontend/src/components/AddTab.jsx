@@ -13,7 +13,7 @@ export const DEFAULT_CATEGORIES = [
       'ลาเต้', 'อเมริกาโน่', 'starbucks', 'ชาเขียว', 'ชานม', 'kfc', 'mcdonald', 'พิซซ่า',
       'mk', 'บุฟเฟ่ต์', 'ของกิน', 'ไอติม', 'ของหวาน', 'ร้านอาหาร', 'เนื้อย่าง'
     ],
-    acct: 'Main',
+    acct: 'บัญชีหลัก',
   },
   {
     id: 'household',
@@ -24,7 +24,7 @@ export const DEFAULT_CATEGORIES = [
       'แฟ้บ', 'ทิชชู่', 'น้ำยาล้างจาน', 'ซุปเปอร์', 'ซื้อของเข้าบ้าน', 'supermarket',
       'วัตสัน', 'watsons', 'ยา', 'ผงซักฟอก', 'ของใช้ในบ้าน', 'น้ำยา'
     ],
-    acct: 'Main',
+    acct: 'บัญชีหลัก',
   },
   {
     id: 'shopping',
@@ -35,7 +35,7 @@ export const DEFAULT_CATEGORIES = [
       'เสื้อ', 'กางเกง', 'รองเท้า', 'กระเป๋า', 'หูฟัง', 'uniqlo', 'zara', 'ซื้อของ',
       'shopping', 'ของเล่น', 'เกม', 'เครื่องสำอาง', 'ลิป', 'ครีม'
     ],
-    acct: 'Main',
+    acct: 'บัญชีหลัก',
   },
   {
     id: 'fuel',
@@ -45,21 +45,21 @@ export const DEFAULT_CATEGORIES = [
       'น้ำมัน', 'เติมน้ำมัน', 'ปตท', 'ptt', 'บางจาก', 'เชลล์', 'shell', 'caltex',
       'เอสโซ่', 'esso', 'gasoline', 'ดีเซล', 'เบนซิน', 'แก๊สโซฮอล์', 'lpg', 'ngv', 'ชาร์จรถ'
     ],
-    acct: 'Main',
+    acct: 'บัญชีหลัก',
   },
   {
     id: 'others',
     cat: 'อื่นๆ',
     tint: '#8a8780',
     kw: ['อื่นๆ', 'จิปาถะ', 'ทั่วไป'],
-    acct: 'Main',
+    acct: 'บัญชีหลัก',
   },
   {
     id: 'income',
     cat: 'รายรับ',
     tint: '#6c9a76',
     kw: ['เงินเดือน', 'โบนัส', 'ได้เงิน', 'รับ', 'คืนเงิน', 'ขายของ', 'ถูกหวย', 'income'],
-    acct: 'Main',
+    acct: 'บัญชีหลัก',
     income: true,
   },
 ];
@@ -111,7 +111,10 @@ export default function AddTab({
   const [newCatColor, setNewCatColor] = useState(PRESET_COLORS[0]);
   const [newCatKw, setNewCatKw] = useState('');
 
-  const defaultAccount = availableAccounts[0]?.name || 'Main';
+  const defaultAccount =
+    availableAccounts.find(
+      (a) => a.name === 'บัญชีหลัก' || a.name.includes('บัญชีหลัก')
+    )?.name || 'บัญชีหลัก';
 
   const handleAddCategory = () => {
     const trimmed = newCatName.trim();
@@ -185,12 +188,15 @@ export default function AddTab({
     const activeCat = overrideCat || (hit ? hit.cat : 'อื่นๆ');
     const activeTint = matchedCat ? matchedCat.tint : hit ? hit.tint : '#8a8780';
 
+    const rawAcct = overrideAcct || (hit && hit.acct ? hit.acct : defaultAccount);
+    const activeAcct = (rawAcct === 'Main' || rawAcct === 'เงินสด/บัญชีหลัก') ? 'บัญชีหลัก' : rawAcct;
+
     return {
       amount,
       name: name || (hit ? hit.cat : 'ไม่ระบุ'),
       cat: activeCat,
       tint: activeTint,
-      acct: overrideAcct || (hit ? hit.acct : defaultAccount),
+      acct: activeAcct,
       income: kind === 'in' || !!(hit && hit.income),
     };
   };
@@ -391,11 +397,27 @@ export default function AddTab({
                       fontSize: '11.5px',
                     }}
                   >
-                    {availableAccounts.map((a) => (
-                      <option key={a.id || a.name} value={a.name} style={{ background: '#262624', color: '#f0eee6' }}>
-                        {a.name}
-                      </option>
-                    ))}
+                    {(() => {
+                      const list = availableAccounts.map((a) => {
+                        const cleanName =
+                          a.name === 'เงินสด/บัญชีหลัก' || a.name === 'Main'
+                            ? 'บัญชีหลัก'
+                            : a.name;
+                        return { ...a, cleanName };
+                      });
+                      if (!list.some((a) => a.cleanName === 'บัญชีหลัก')) {
+                        list.unshift({ id: 'acct-main', cleanName: 'บัญชีหลัก' });
+                      }
+                      return list.map((a) => (
+                        <option
+                          key={a.id || a.cleanName}
+                          value={a.cleanName}
+                          style={{ background: '#262624', color: '#f0eee6' }}
+                        >
+                          {a.cleanName}
+                        </option>
+                      ));
+                    })()}
                   </select>
                 </div>
 

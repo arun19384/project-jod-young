@@ -20,31 +20,31 @@ var categoryRules = []CategoryRule{
 		Keywords: []string{"ข้าว", "อาหาร", "ก๋วยเตี๋ยว", "หมูกระทะ", "ชาบู", "กิน", "ส้มตำ", "ข้าวมันไก่", "ขนม", "กะเพรา", "ซูชิ", "ซูชิโระ", "sushi", "sushiro", "ราเมง", "กาแฟ", "ชา", "ลาเต้", "อเมริกาโน่", "starbucks", "ชาเขียว", "ชานม", "kfc", "mcdonald", "พิซซ่า", "mk", "บุฟเฟ่ต์", "ของกิน"},
 		Category: "อาหาร",
 		Tint:     "#d97757",
-		Account:  "Main",
+		Account:  "บัญชีหลัก",
 	},
 	{
 		Keywords: []string{"ของใช้", "เซเว่น", "7-11", "โลตัส", "lotus", "big c", "cj", "สบู่", "ยาสีฟัน", "แฟ้บ", "ทิชชู่", "น้ำยาล้างจาน", "ซุปเปอร์", "ซื้อของเข้าบ้าน", "supermarket", "วัตสัน", "watsons"},
 		Category: "ของใช้",
 		Tint:     "#c9a227",
-		Account:  "Main",
+		Account:  "บัญชีหลัก",
 	},
 	{
 		Keywords: []string{"ชอปปิ้ง", "ช้อปปิ้ง", "ช็อปปิ้ง", "เสื้อผ้า", "shopee", "lazada", "tiktok", "เสื้อ", "กางเกง", "รองเท้า", "กระเป๋า", "หูฟัง", "uniqlo", "zara", "ซื้อของ", "shopping", "ของเล่น", "เกม", "เครื่องสำอาง"},
 		Category: "ชอปปิ้ง",
 		Tint:     "#9b8ec4",
-		Account:  "Main",
+		Account:  "บัญชีหลัก",
 	},
 	{
 		Keywords: []string{"น้ำมัน", "เติมน้ำมัน", "ปตท", "ptt", "บางจาก", "เชลล์", "shell", "caltex", "เอสโซ่", "esso", "gasoline", "ดีเซล", "เบนซิน", "แก๊สโซฮอล์"},
 		Category: "เติมน้ำมัน",
 		Tint:     "#7fa3c9",
-		Account:  "Main",
+		Account:  "บัญชีหลัก",
 	},
 	{
 		Keywords: []string{"เงินเดือน", "โบนัส", "ได้เงิน", "รับ", "คืนเงิน", "ขายของ", "ถูกหวย"},
 		Category: "รายรับ",
 		Tint:     "#6c9a76",
-		Account:  "Main",
+		Account:  "บัญชีหลัก",
 		IsIncome: true,
 	},
 }
@@ -67,7 +67,7 @@ func ParseTransactionText(text string, forceKind string) models.ParseResponse {
 
 	category := "อื่นๆ"
 	tint := "#8a8780"
-	account := "Main"
+	account := "บัญชีหลัก"
 	isIncome := forceKind == "in"
 
 	for _, rule := range categoryRules {

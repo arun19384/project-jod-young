@@ -327,6 +327,10 @@ func (d *DBService) initSchema() error {
 		}
 	}
 
+	// Migrate any existing account named 'เงินสด/บัญชีหลัก' to 'บัญชีหลัก'
+	_, _ = d.sqlDB.Exec("UPDATE accounts SET name = 'บัญชีหลัก' WHERE name = 'เงินสด/บัญชีหลัก' OR id = 'acct-main'")
+	_, _ = d.sqlDB.Exec("UPDATE transactions SET account = 'บัญชีหลัก' WHERE account = 'เงินสด/บัญชีหลัก'")
+
 	// Seed from initial data if empty
 	d.seedIfEmpty()
 	return nil

@@ -69,7 +69,9 @@ export default function BankTab({
             >
               <div style={{ width: '3px', alignSelf: 'stretch', borderRadius: '99px', background: b.tint || '#d97757' }} />
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div style={{ font: "500 14px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>{b.name}</div>
+                <div style={{ font: "500 14px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
+                  {b.name === 'เงินสด/บัญชีหลัก' || b.name === 'Main' ? 'บัญชีหลัก' : b.name}
+                </div>
                 <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>{b.role}</div>
               </div>
               <div style={{ font: "600 16px/1 'IBM Plex Sans Thai'", color: '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>

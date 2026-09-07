@@ -131,8 +131,8 @@ func TransactionsHandler(w http.ResponseWriter, r *http.Request) {
 		if req.Tint == "" {
 			req.Tint = "#8a8780"
 		}
-		if req.Account == "" {
-			req.Account = "Main"
+		if req.Account == "" || req.Account == "Main" || req.Account == "เงินสด/บัญชีหลัก" {
+			req.Account = "บัญชีหลัก"
 		}
 
 		newTx := db.AddTransaction(models.Transaction{

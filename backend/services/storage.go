@@ -59,11 +59,20 @@ func (s *StorageService) load() error {
 		return err
 	}
 
+	for i := range db.Accounts {
+		if db.Accounts[i].Name == "เงินสด/บัญชีหลัก" || (db.Accounts[i].ID == "acct-main" && db.Accounts[i].Name != "บัญชีหลัก") {
+			db.Accounts[i].Name = "บัญชีหลัก"
+		}
+	}
+	for i := range db.Transactions {
+		if db.Transactions[i].Account == "เงินสด/บัญชีหลัก" {
+			db.Transactions[i].Account = "บัญชีหลัก"
+		}
+	}
+
 	s.db = db
 
-	if targetPath == s.initPath {
-		_ = s.saveLocked()
-	}
+	_ = s.saveLocked()
 
 	return nil
 }
@@ -706,7 +715,7 @@ func (s *StorageService) ResetData(cleanSlate bool) models.Database {
 			Transactions:  []models.Transaction{},
 			Debts:         []models.Debt{},
 			Accounts: []models.BankAccount{
-				{ID: "acct-main", Name: "เงินสด/บัญชีหลัก", Role: "ใช้จ่ายประจำวัน", Amount: 0, Tint: "#d97757"},
+				{ID: "acct-main", Name: "บัญชีหลัก", Role: "ใช้จ่ายประจำวัน", Amount: 0, Tint: "#d97757"},
 			},
 			Cards: []models.CreditCard{},
 			Fixed: []models.FixedExpense{},
