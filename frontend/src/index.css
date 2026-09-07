@@ -146,3 +146,19 @@ input, button, select {
   background-size: 200% 100%;
   animation: shimmer 2.5s infinite linear;
 }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3.5px solid rgba(217, 119, 87, 0.18);
+  border-top-color: #d97757;
+  border-right-color: #d97757;
+  border-radius: 50%;
+  animation: spin 0.75s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 16px rgba(217, 119, 87, 0.2);
+}

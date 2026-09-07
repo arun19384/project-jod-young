@@ -13,6 +13,7 @@ import {
   AddDebtModal,
   SettingsModal,
 } from './components/Modals.jsx';
+import LoadingPopup from './components/LoadingPopup.jsx';
 import {
   fetchSummary,
   fetchTransactions,
@@ -169,6 +170,7 @@ export default function App() {
   const [showAddPlanModal, setShowAddPlanModal] = useState(false);
   const [showAddDebtModal, setShowAddDebtModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [loadingText, setLoadingText] = useState(null);
 
   // PWA & iOS detection states
   const checkIsMobile = () => {
@@ -290,178 +292,156 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Handlers
-  const handleAddTransaction = async (newTx) => {
+  // Loading & Async Action Wrapper
+  const runWithLoading = async (actionFn, message = 'กำลังดำเนินการ...') => {
+    setLoadingText(message);
     try {
+      await actionFn();
+    } catch (err) {
+      console.error(`Error during action [${message}]:`, err);
+    } finally {
+      setTimeout(() => {
+        setLoadingText(null);
+      }, 260);
+    }
+  };
+
+  // Handlers wrapped with Loading Pop-up
+  const handleAddTransaction = (newTx) => {
+    return runWithLoading(async () => {
       await addTransaction(newTx);
       await loadData();
       setTab('home');
-    } catch (err) {
-      console.error('Failed to add transaction:', err);
-    }
+    }, 'กำลังบันทึกรายการ...');
   };
 
-  const handleDeleteTransaction = async (id) => {
-    try {
+  const handleDeleteTransaction = (id) => {
+    return runWithLoading(async () => {
       await deleteTransaction(id);
       await loadData();
-    } catch (err) {
-      console.error('Failed to delete transaction:', err);
-    }
+    }, 'กำลังลบรายการ...');
   };
 
-  const handleToggleDebt = async (id) => {
-    try {
+  const handleToggleDebt = (id) => {
+    return runWithLoading(async () => {
       await toggleDebt(id);
       await loadData();
-    } catch (err) {
-      console.error('Failed to toggle debt:', err);
-    }
+    }, 'กำลังอัปเดตสถานะ...');
   };
 
-  const handleAddDebt = async (debtData) => {
-    try {
+  const handleAddDebt = (debtData) => {
+    return runWithLoading(async () => {
       await addDebt(debtData);
       await loadData();
       setShowAddDebtModal(false);
-    } catch (err) {
-      console.error('Failed to add debt:', err);
-    }
+    }, 'กำลังบันทึกคนติดเงิน...');
   };
 
-  const handleDeleteDebt = async (id) => {
-    try {
+  const handleDeleteDebt = (id) => {
+    return runWithLoading(async () => {
       await deleteDebt(id);
       await loadData();
-    } catch (err) {
-      console.error('Failed to delete debt:', err);
-    }
+    }, 'กำลังลบรายการ...');
   };
 
-  const handleToggleFixed = async (id) => {
-    try {
+  const handleToggleFixed = (id) => {
+    return runWithLoading(async () => {
       await toggleFixed(id);
       await loadData();
-    } catch (err) {
-      console.error('Failed to toggle fixed bill:', err);
-    }
+    }, 'กำลังอัปเดตบิล...');
   };
 
-  const handleAddFixed = async (fixedData) => {
-    try {
+  const handleAddFixed = (fixedData) => {
+    return runWithLoading(async () => {
       await addFixed(fixedData);
       await loadData();
       setShowAddFixedModal(false);
-    } catch (err) {
-      console.error('Failed to add fixed bill:', err);
-    }
+    }, 'กำลังบันทึกบิลคงที่...');
   };
 
-  const handleDeleteFixed = async (id) => {
-    try {
+  const handleDeleteFixed = (id) => {
+    return runWithLoading(async () => {
       await deleteFixed(id);
       await loadData();
-    } catch (err) {
-      console.error('Failed to delete fixed bill:', err);
-    }
+    }, 'กำลังลบบิล...');
   };
 
-  const handleAddAccount = async (accData) => {
-    try {
+  const handleAddAccount = (accData) => {
+    return runWithLoading(async () => {
       await addAccount(accData);
       await loadData();
       setShowAddAccountModal(false);
-    } catch (err) {
-      console.error('Failed to add account:', err);
-    }
+    }, 'กำลังเพิ่มบัญชี...');
   };
 
-  const handleDeleteAccount = async (id) => {
-    try {
+  const handleDeleteAccount = (id) => {
+    return runWithLoading(async () => {
       await deleteAccount(id);
       await loadData();
-    } catch (err) {
-      console.error('Failed to delete account:', err);
-    }
+    }, 'กำลังลบบัญชี...');
   };
 
-  const handleAddCard = async (cardData) => {
-    try {
+  const handleAddCard = (cardData) => {
+    return runWithLoading(async () => {
       await addCard(cardData);
       await loadData();
       setShowAddCardModal(false);
-    } catch (err) {
-      console.error('Failed to add card:', err);
-    }
+    }, 'กำลังบันทึกบัตรเครดิต...');
   };
 
-  const handleConfirmPayCard = async (cardId, fromAccountId, amount) => {
-    try {
+  const handleConfirmPayCard = (cardId, fromAccountId, amount) => {
+    return runWithLoading(async () => {
       await payCard(cardId, fromAccountId, amount);
       await loadData();
       setPayCardTarget(null);
-    } catch (err) {
-      console.error('Failed to pay card:', err);
-    }
+    }, 'กำลังบันทึกการชำระหนี้...');
   };
 
-  const handleDeleteCard = async (id) => {
-    try {
+  const handleDeleteCard = (id) => {
+    return runWithLoading(async () => {
       await deleteCard(id);
       await loadData();
-    } catch (err) {
-      console.error('Failed to delete card:', err);
-    }
+    }, 'กำลังลบบัตร...');
   };
 
-  const handleAddPlan = async (planData) => {
-    try {
+  const handleAddPlan = (planData) => {
+    return runWithLoading(async () => {
       await addPlan(planData);
       await loadData();
       setShowAddPlanModal(false);
-    } catch (err) {
-      console.error('Failed to add plan:', err);
-    }
+    }, 'กำลังบันทึกรายการผ่อน...');
   };
 
-  const handlePayPlan = async (planId) => {
-    try {
+  const handlePayPlan = (planId) => {
+    return runWithLoading(async () => {
       const defaultAcc = accountsData?.accounts?.[0]?.id || 'Main';
       await payPlan(planId, defaultAcc);
       await loadData();
-    } catch (err) {
-      console.error('Failed to pay plan:', err);
-    }
+    }, 'กำลังบันทึกชำระงวด...');
   };
 
-  const handleDeletePlan = async (id) => {
-    try {
+  const handleDeletePlan = (id) => {
+    return runWithLoading(async () => {
       await deletePlan(id);
       await loadData();
-    } catch (err) {
-      console.error('Failed to delete plan:', err);
-    }
+    }, 'กำลังลบรายการผ่อน...');
   };
 
-  const handleSaveBudget = async (newBudget) => {
-    try {
+  const handleSaveBudget = (newBudget) => {
+    return runWithLoading(async () => {
       await updateBudget(newBudget);
       await loadData();
       setShowBudgetModal(false);
-    } catch (err) {
-      console.error('Failed to update budget:', err);
-    }
+    }, 'กำลังบันทึกงบประมาณ...');
   };
 
-  const handleReset = async (cleanSlate) => {
-    try {
+  const handleReset = (cleanSlate) => {
+    return runWithLoading(async () => {
       await resetData(cleanSlate);
       await loadData();
       setShowSettingsModal(false);
       setTab('home');
-    } catch (err) {
-      console.error('Failed to reset data:', err);
-    }
+    }, 'กำลังดำเนินการ...');
   };
 
   // Get available accounts and cards list for dropdowns
@@ -505,7 +485,7 @@ export default function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: isRealMobile ? 'max(env(safe-area-inset-top, 50px), 50px)' : '12px',
+          paddingTop: isRealMobile ? '70px' : isMobileFrame ? '18px' : '14px',
           paddingBottom: '10px',
           paddingLeft: '18px',
           paddingRight: '18px',
@@ -944,6 +924,9 @@ export default function App() {
           onClose={() => setShowSettingsModal(false)}
         />
       )}
+
+      {/* Global Action Loading Popup */}
+      {loadingText && <LoadingPopup message={loadingText} />}
     </div>
   );
 }
