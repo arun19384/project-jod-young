@@ -380,10 +380,12 @@ export default function App() {
   const content = (
     <div
       style={{
+        position: isRealMobile ? 'fixed' : 'relative',
+        inset: isRealMobile ? 0 : 'auto',
         width: '100%',
         maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
-        height: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : 'auto',
-        minHeight: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
+        height: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
+        maxHeight: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
         flex: isRealMobile ? '1' : 'none',
         borderRadius: isRealMobile ? '0px' : isMobileFrame ? '46px' : '24px',
         background: '#262624',
@@ -394,10 +396,10 @@ export default function App() {
           ? '0 40px 80px -20px rgba(0,0,0,.7), 0 0 0 9px #121211'
           : '0 20px 50px rgba(0,0,0,0.5)',
         overflow: 'hidden',
-        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         transition: 'all 0.3s ease',
+        zIndex: 10,
       }}
     >
       {/* Mobile Top Status Bar */}
@@ -460,7 +462,7 @@ export default function App() {
       </div>
 
       {/* Main Scrollable View Area */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', paddingBottom: '24px' }}>
         {tab === 'home' && (
           <HomeTab
             summary={summary}
@@ -503,16 +505,25 @@ export default function App() {
         )}
       </div>
 
-      {/* Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar - Locked & Sticky at bottom */}
       <div
         style={{
           flex: 'none',
+          position: 'sticky',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          width: '100%',
+          zIndex: 100,
           borderTop: '1px solid #34332f',
-          background: '#2a2926',
+          background: 'rgba(42, 41, 38, 0.96)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           padding: '8px 12px calc(10px + env(safe-area-inset-bottom, 14px))',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '4px',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.45)',
         }}
       >
         {TABS.map((t) => {

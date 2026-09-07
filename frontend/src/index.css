@@ -10,9 +10,11 @@ html, body {
   background: #191917;
   color: #f0eee6;
   font-family: 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
+  height: 100%;
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overscroll-behavior-y: none;
+  overflow-x: hidden;
 }
 
 button {
