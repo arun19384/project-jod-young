@@ -144,11 +144,32 @@ export default function App() {
     return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
   });
 
+  // Safe localStorage helper for iOS Safari private mode
+  const getStoredItem = (key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  };
+
+  const setStoredItem = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // Ignored if storage is restricted
+    }
+  };
+
   const [showIosPrompt, setShowIosPrompt] = useState(() => {
     if (typeof window === 'undefined') return false;
-    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-    return isIos && !isStandalone && !localStorage.getItem('ios_pwa_dismissed');
+    try {
+      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+      return Boolean(isIos && !isStandalone && !getStoredItem('ios_pwa_dismissed'));
+    } catch {
+      return false;
+    }
   });
 
   useEffect(() => {
@@ -611,7 +632,7 @@ export default function App() {
           </div>
           <button
             onClick={() => {
-              localStorage.setItem('ios_pwa_dismissed', 'true');
+              setStoredItem('ios_pwa_dismissed', 'true');
               setShowIosPrompt(false);
             }}
             style={{
