@@ -17,51 +17,27 @@ type CategoryRule struct {
 
 var categoryRules = []CategoryRule{
 	{
-		Keywords: []string{"กาแฟ", "ชา", "ลาเต้", "อเมริกาโน่", "starbucks", "ชาเขียว", "ชานม"},
-		Category: "กาแฟ",
-		Tint:     "#c9a227",
-		Account:  "Main",
-	},
-	{
-		Keywords: []string{"ข้าว", "อาหาร", "ก๋วยเตี๋ยว", "หมูกระทะ", "ชาบู", "กิน", "เซเว่น", "7-11", "ส้มตำ", "ข้าวมันไก่", "ขนม", "กะเพรา"},
+		Keywords: []string{"ข้าว", "อาหาร", "ก๋วยเตี๋ยว", "หมูกระทะ", "ชาบู", "กิน", "ส้มตำ", "ข้าวมันไก่", "ขนม", "กะเพรา", "ซูชิ", "ซูชิโระ", "sushi", "sushiro", "ราเมง", "กาแฟ", "ชา", "ลาเต้", "อเมริกาโน่", "starbucks", "ชาเขียว", "ชานม", "kfc", "mcdonald", "พิซซ่า", "mk", "บุฟเฟ่ต์", "ของกิน"},
 		Category: "อาหาร",
 		Tint:     "#d97757",
 		Account:  "Main",
 	},
 	{
-		Keywords: []string{"น้ำมัน", "เติมน้ำมัน", "ปตท", "ptt", "บางจาก", "เชลล์", "gasoline"},
-		Category: "น้ำมันรถ",
-		Tint:     "#7fa3c9",
-		Account:  "Main",
-	},
-	{
-		Keywords: []string{"แท็กซี่", "วิน", "bts", "mrt", "grab", "ทางด่วน", "ที่จอดรถ", "รถเมล์"},
-		Category: "เดินทาง",
-		Tint:     "#7fa3c9",
-		Account:  "Main",
-	},
-	{
-		Keywords: []string{"ค่าไฟ", "ค่าน้ำ", "เน็ต", "โทรศัพท์", "ประกันสังคม", "ให้แม่", "ค่าห้อง", "ค่าเช่า"},
-		Category: "คงที่",
-		Tint:     "#9b8ec4",
-		Account:  "Main",
-	},
-	{
-		Keywords: []string{"บัตร", "ผ่อน", "ประกัน"},
-		Category: "บัตร/ผ่อน",
-		Tint:     "#9b8ec4",
-		Account:  "Credit",
-	},
-	{
-		Keywords: []string{"เก็บ", "ออม", "saving"},
-		Category: "เงินเก็บ",
-		Tint:     "#6c9a76",
-		Account:  "Saving",
-	},
-	{
-		Keywords: []string{"ออกให้", "ยืม", "ออกก่อน", "จ่ายแทน"},
-		Category: "ออกให้ก่อน",
+		Keywords: []string{"ของใช้", "เซเว่น", "7-11", "โลตัส", "lotus", "big c", "cj", "สบู่", "ยาสีฟัน", "แฟ้บ", "ทิชชู่", "น้ำยาล้างจาน", "ซุปเปอร์", "ซื้อของเข้าบ้าน", "supermarket", "วัตสัน", "watsons"},
+		Category: "ของใช้",
 		Tint:     "#c9a227",
+		Account:  "Main",
+	},
+	{
+		Keywords: []string{"ชอปปิ้ง", "ช้อปปิ้ง", "ช็อปปิ้ง", "เสื้อผ้า", "shopee", "lazada", "tiktok", "เสื้อ", "กางเกง", "รองเท้า", "กระเป๋า", "หูฟัง", "uniqlo", "zara", "ซื้อของ", "shopping", "ของเล่น", "เกม", "เครื่องสำอาง"},
+		Category: "ชอปปิ้ง",
+		Tint:     "#9b8ec4",
+		Account:  "Main",
+	},
+	{
+		Keywords: []string{"น้ำมัน", "เติมน้ำมัน", "ปตท", "ptt", "บางจาก", "เชลล์", "shell", "caltex", "เอสโซ่", "esso", "gasoline", "ดีเซล", "เบนซิน", "แก๊สโซฮอล์"},
+		Category: "เติมน้ำมัน",
+		Tint:     "#7fa3c9",
 		Account:  "Main",
 	},
 	{
