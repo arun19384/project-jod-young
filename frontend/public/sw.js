@@ -1,24 +1,24 @@
-const CACHE_NAME = 'jod-ngen-v1';
+const CACHE_NAME = 'jod-ngen-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/favicon.png',
+  '/app-logo.png',
   '/apple-touch-icon.png'
 ];
 
-// Install: pre-cache app shell
+// Install: pre-cache app shell and skip waiting immediately
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// Activate: cleanup old caches
+// Activate: cleanup all old caches and take control
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -29,11 +29,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Network-first for API, Cache-first for static assets
+// Fetch: Always Network-first for HTML, navigation, and API; Cache-first for hashed assets
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Always go to network for API requests
+  // Always network for API
   if (url.pathname.startsWith('/api')) {
     event.respondWith(
       fetch(event.request).catch(() => {
@@ -46,11 +46,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first with network fallback for static files
+  // Network-first for navigation / HTML requests so code updates are received immediately
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        }
+        return networkResponse;
+      }).catch(() => {
+        return caches.match(event.request).then((cached) => cached || caches.match('/index.html'));
+      })
+    );
+    return;
+  }
+
+  // Cache-first for other static assets (images, fonts, hashed js/css)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Fetch in background to update cache
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
@@ -59,13 +74,11 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
       return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+        if (!networkResponse || networkResponse.status !== 200) {
           return networkResponse;
         }
         const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
         return networkResponse;
       });
     })

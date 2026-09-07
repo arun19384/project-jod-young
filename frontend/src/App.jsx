@@ -224,6 +224,29 @@ export default function App() {
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
 
+    // Keep window.scrollY locked to 0 on iOS so page never shifts up
+    const handleScrollLock = () => {
+      if (window.scrollY !== 0) {
+        window.scrollTo(0, 0);
+      }
+    };
+    window.addEventListener('scroll', handleScrollLock, { passive: true });
+
+    // When virtual keyboard closes or inputs blur, reset scroll position instantly
+    const handleFocusOut = () => {
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }, 50);
+    };
+    window.addEventListener('focusout', handleFocusOut);
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleScrollLock);
+      window.visualViewport.addEventListener('scroll', handleScrollLock);
+    }
+
     const clockTimer = setInterval(() => {
       const now = new Date();
       setCurrentTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
@@ -232,6 +255,12 @@ export default function App() {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
+      window.removeEventListener('scroll', handleScrollLock);
+      window.removeEventListener('focusout', handleFocusOut);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleScrollLock);
+        window.visualViewport.removeEventListener('scroll', handleScrollLock);
+      }
       clearInterval(clockTimer);
     };
   }, []);
@@ -472,34 +501,34 @@ export default function App() {
       {/* Mobile Top Status Bar */}
       <div
         style={{
-          height: isRealMobile ? 'calc(44px + env(safe-area-inset-top, 0px))' : '52px',
-          paddingTop: isRealMobile ? 'env(safe-area-inset-top, 0px)' : '0px',
           flex: 'none',
           display: 'flex',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           justifyContent: 'space-between',
+          paddingTop: isRealMobile ? 'max(env(safe-area-inset-top, 54px), 54px)' : '12px',
+          paddingBottom: '10px',
           paddingLeft: '18px',
           paddingRight: '18px',
-          paddingBottom: '8px',
-          font: "500 13px/1 'IBM Plex Sans Thai'",
-          color: '#f0eee6',
           background: '#262624',
           borderBottom: '1px solid #2f2e2b',
+          zIndex: 50,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <img
             src="/app-logo.png"
             alt="Logo"
             style={{
-              width: '24px',
-              height: '24px',
-              borderRadius: '7px',
+              width: '28px',
+              height: '28px',
+              borderRadius: '8px',
               objectFit: 'cover',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             }}
           />
-          <span style={{ fontWeight: '600', fontSize: '13px' }}>{currentTime}</span>
+          <span style={{ fontWeight: '700', fontSize: '16px', color: '#f0eee6', letterSpacing: '-0.01em' }}>
+            จดเงิน
+          </span>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {/* Backend Status Indicator */}
@@ -550,7 +579,7 @@ export default function App() {
           overflowY: 'auto',
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
-          paddingBottom: isRealMobile ? 'calc(76px + env(safe-area-inset-bottom, 24px))' : '24px',
+          paddingBottom: isRealMobile ? 'calc(80px + max(env(safe-area-inset-bottom, 34px), 34px))' : '24px',
         }}
       >
         {tab === 'home' && (
@@ -610,12 +639,13 @@ export default function App() {
           width: '100%',
           maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
           margin: '0 auto',
-          zIndex: 100,
+          zIndex: 1000,
           borderTop: '1px solid #34332f',
-          background: 'rgba(38, 38, 36, 0.98)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          padding: '7px 12px calc(8px + env(safe-area-inset-bottom, 20px))',
+          background: '#262624',
+          paddingTop: '8px',
+          paddingLeft: '12px',
+          paddingRight: '12px',
+          paddingBottom: isRealMobile ? 'max(env(safe-area-inset-bottom, 34px), 34px)' : '10px',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '4px',
