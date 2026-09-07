@@ -39,11 +39,52 @@ import {
   resetData,
 } from './services/api.js';
 
+// SVG Icons for Bottom Navigation
+function HomeIcon({ active }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#d97757' : '#8a8780'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z" fill={active ? 'rgba(217, 119, 87, 0.22)' : 'none'} />
+      <path d="M9 21V12h6v9" />
+    </svg>
+  );
+}
+
+function AddIcon({ active }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#d97757' : '#8a8780'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill={active ? 'rgba(217, 119, 87, 0.22)' : 'none'} />
+    </svg>
+  );
+}
+
+function BankIcon({ active }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#d97757' : '#8a8780'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="5" width="20" height="14" rx="3" fill={active ? 'rgba(217, 119, 87, 0.22)' : 'none'} />
+      <line x1="2" y1="10" x2="22" y2="10" />
+      <circle cx="6" cy="15" r="1.5" fill={active ? '#d97757' : '#8a8780'} />
+    </svg>
+  );
+}
+
+function PlanIcon({ active }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#d97757' : '#8a8780'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="3" fill={active ? 'rgba(217, 119, 87, 0.22)' : 'none'} />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" />
+    </svg>
+  );
+}
+
 const TABS = [
-  { id: 'home', label: 'สรุป', r: '6px' },
-  { id: 'add', label: 'จด', r: '99px' },
-  { id: 'bank', label: 'บัญชี', r: '4px' },
-  { id: 'plan', label: 'ผ่อน', r: '50% 6px 50% 6px' },
+  { id: 'home', label: 'สรุป', Icon: HomeIcon },
+  { id: 'add', label: 'จด', Icon: AddIcon },
+  { id: 'bank', label: 'บัญชี', Icon: BankIcon },
+  { id: 'plan', label: 'ผ่อน', Icon: PlanIcon },
 ];
 
 class ErrorBoundary extends React.Component {
@@ -405,8 +446,8 @@ export default function App() {
         inset: isRealMobile ? 0 : 'auto',
         width: '100%',
         maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
-        height: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
-        maxHeight: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
+        height: isRealMobile ? '100%' : isMobileFrame ? '844px' : '90vh',
+        maxHeight: isRealMobile ? '100%' : isMobileFrame ? '844px' : '90vh',
         flex: isRealMobile ? '1' : 'none',
         borderRadius: isRealMobile ? '0px' : isMobileFrame ? '46px' : '24px',
         background: '#262624',
@@ -419,7 +460,7 @@ export default function App() {
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        transition: 'all 0.3s ease',
+        transition: isRealMobile ? 'none' : 'all 0.3s ease',
         zIndex: 10,
       }}
     >
@@ -432,15 +473,29 @@ export default function App() {
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'space-between',
-          paddingLeft: '20px',
-          paddingRight: '20px',
+          paddingLeft: '18px',
+          paddingRight: '18px',
           paddingBottom: '8px',
           font: "500 13px/1 'IBM Plex Sans Thai'",
           color: '#f0eee6',
           background: '#262624',
+          borderBottom: '1px solid #2f2e2b',
         }}
       >
-        <span style={{ fontWeight: '600' }}>{currentTime}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img
+            src="/app-logo.png"
+            alt="Logo"
+            style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '7px',
+              objectFit: 'cover',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+            }}
+          />
+          <span style={{ fontWeight: '600', fontSize: '13px' }}>{currentTime}</span>
+        </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {/* Backend Status Indicator */}
           <span
@@ -487,6 +542,8 @@ export default function App() {
         {tab === 'home' && (
           <HomeTab
             summary={summary}
+            accountsData={accountsData}
+            transactions={transactions}
             onToggleDebt={handleToggleDebt}
             onDeleteDebt={handleDeleteDebt}
             onOpenAddDebt={() => setShowAddDebtModal(true)}
@@ -526,60 +583,63 @@ export default function App() {
         )}
       </div>
 
-      {/* Bottom Navigation Bar - Locked & Sticky at bottom */}
-      <div
+      {/* Bottom Navigation Bar - Locked & Anchored at bottom */}
+      <nav
+        role="navigation"
+        aria-label="เมนูหลัก"
         style={{
           flex: 'none',
-          position: 'sticky',
-          bottom: 0,
-          left: 0,
-          right: 0,
+          position: 'relative',
           width: '100%',
           zIndex: 100,
           borderTop: '1px solid #34332f',
-          background: 'rgba(42, 41, 38, 0.96)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          padding: '8px 12px calc(10px + env(safe-area-inset-bottom, 14px))',
+          background: 'rgba(38, 38, 36, 0.98)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          padding: '7px 12px calc(8px + env(safe-area-inset-bottom, 0px))',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '4px',
-          boxShadow: '0 -4px 20px rgba(0,0,0,0.45)',
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
         }}
       >
         {TABS.map((t) => {
           const isActive = tab === t.id;
+          const IconComponent = t.Icon;
           return (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               style={{
                 border: 'none',
-                background: isActive ? '#312f2b' : 'transparent',
-                borderRadius: '13px',
-                padding: '9px 4px 8px',
+                background: isActive ? 'rgba(217, 119, 87, 0.14)' : 'transparent',
+                borderRadius: '12px',
+                padding: '7px 4px 6px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '4px',
                 cursor: 'pointer',
-                transition: 'background 0.2s',
+                transition: 'all 0.15s ease',
               }}
             >
               <div
                 style={{
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: t.r,
-                  border: `1.6px solid ${isActive ? '#d97757' : '#78756e'}`,
-                  background: isActive ? 'rgba(217,119,87,.25)' : 'transparent',
-                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transform: isActive ? 'scale(1.08)' : 'scale(1)',
+                  transition: 'transform 0.15s ease',
                 }}
-              />
+              >
+                <IconComponent active={isActive} />
+              </div>
               <div
                 style={{
-                  font: "500 10.5px/1 'IBM Plex Sans Thai'",
-                  color: isActive ? '#d97757' : '#78756e',
+                  font: `${isActive ? '600' : '400'} 11px/1 'IBM Plex Sans Thai'`,
+                  color: isActive ? '#d97757' : '#8a8780',
+                  letterSpacing: '0.01em',
+                  transition: 'color 0.15s ease',
                 }}
               >
                 {t.label}
@@ -587,7 +647,7 @@ export default function App() {
             </button>
           );
         })}
-      </div>
+      </nav>
     </div>
   );
 
@@ -656,12 +716,28 @@ export default function App() {
 
       {/* Header Info (Desktop only) */}
       {!isRealMobile && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center', maxWidth: '420px' }}>
-          <div style={{ font: "500 11px/1 'IBM Plex Mono', monospace", letterSpacing: '.14em', color: '#8a8780', textTransform: 'uppercase' }}>
-            Real-World Personal Finance App
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', textAlign: 'center', maxWidth: '420px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img
+              src="/app-logo.png"
+              alt="จดเงิน"
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '14px',
+                border: '1.5px solid #3a3936',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                objectFit: 'cover',
+              }}
+            />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ font: "500 11px/1 'IBM Plex Mono', monospace", letterSpacing: '.14em', color: '#8a8780', textTransform: 'uppercase' }}>
+                Personal Finance App
+              </div>
+              <div style={{ font: "600 22px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>จดเงิน</div>
+            </div>
           </div>
-          <div style={{ font: "600 22px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>จดเงิน</div>
-          <div style={{ font: "300 13px/1.5 'IBM Plex Sans Thai'", color: '#8a8780' }}>
+          <div style={{ font: "300 13px/1.4 'IBM Plex Sans Thai'", color: '#8a8780' }}>
             พิมพ์ประโยคเดียว ระบบตัดยอดเงินในบัญชีจริงอัตโนมัติ
           </div>
 

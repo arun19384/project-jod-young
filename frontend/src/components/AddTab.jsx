@@ -102,7 +102,6 @@ export default function AddTab({
               if (e.key === 'Enter') handleSave();
             }}
             placeholder="กาแฟ 120"
-            autoFocus
             style={{
               border: 'none',
               outline: 'none',
