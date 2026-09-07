@@ -473,15 +473,15 @@ export default function App() {
   const content = (
     <div
       style={{
-        position: isRealMobile ? 'fixed' : 'relative',
+        position: isRealMobile ? 'absolute' : 'relative',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
         width: '100%',
         maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
-        height: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
-        maxHeight: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
+        height: isRealMobile ? '100%' : isMobileFrame ? '844px' : '90vh',
+        maxHeight: isRealMobile ? '100%' : isMobileFrame ? '844px' : '90vh',
         flex: isRealMobile ? '1' : 'none',
         borderRadius: isRealMobile ? '0px' : isMobileFrame ? '46px' : '24px',
         background: '#262624',
@@ -505,7 +505,7 @@ export default function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: isRealMobile ? 'max(env(safe-area-inset-top, 54px), 54px)' : '12px',
+          paddingTop: isRealMobile ? 'max(env(safe-area-inset-top, 50px), 50px)' : '12px',
           paddingBottom: '10px',
           paddingLeft: '18px',
           paddingRight: '18px',
@@ -530,7 +530,7 @@ export default function App() {
             จดเงิน
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {/* Backend Status Indicator */}
           <span
             title={backendOnline ? 'Golang Backend Online (:8080)' : 'Connecting to Golang Backend...'}
@@ -553,6 +553,38 @@ export default function App() {
             {backendOnline ? 'Live DB' : 'Connecting'}
           </span>
 
+          {/* Quick Reload Button */}
+          <button
+            onClick={async () => {
+              try {
+                if ('caches' in window) {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.map((k) => caches.delete(k)));
+                }
+                if ('serviceWorker' in navigator) {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  await Promise.all(regs.map((r) => r.unregister()));
+                }
+              } catch (e) {}
+              window.location.replace(window.location.origin + '?reload=' + Date.now());
+            }}
+            title="รีเฟรชหน้าจอ / โหลดเวอร์ชันล่าสุด"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid #3a3936',
+              borderRadius: '7px',
+              color: '#f0eee6',
+              cursor: 'pointer',
+              fontSize: '11px',
+              padding: '3px 8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+          >
+            🔄 รีเฟรช
+          </button>
+
           {/* Settings Button */}
           <button
             onClick={() => setShowSettingsModal(true)}
@@ -562,7 +594,7 @@ export default function App() {
               border: 'none',
               color: '#8a8780',
               cursor: 'pointer',
-              fontSize: '13px',
+              fontSize: '15px',
               padding: '2px',
             }}
           >
@@ -579,7 +611,7 @@ export default function App() {
           overflowY: 'auto',
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
-          paddingBottom: isRealMobile ? 'calc(80px + max(env(safe-area-inset-bottom, 34px), 34px))' : '24px',
+          paddingBottom: '24px',
         }}
       >
         {tab === 'home' && (
@@ -626,20 +658,17 @@ export default function App() {
         )}
       </div>
 
-      {/* Bottom Navigation Bar - Locked & Anchored at bottom */}
+      {/* Bottom Navigation Bar - Locked at bottom of Flexbox */}
       <nav
         role="navigation"
         aria-label="เมนูหลัก"
         style={{
           flex: 'none',
-          position: isRealMobile ? 'fixed' : 'relative',
-          bottom: 0,
-          left: 0,
-          right: 0,
+          position: 'relative',
           width: '100%',
           maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
           margin: '0 auto',
-          zIndex: 1000,
+          zIndex: 100,
           borderTop: '1px solid #34332f',
           background: '#262624',
           paddingTop: '8px',
@@ -703,8 +732,8 @@ export default function App() {
   return (
     <div
       style={{
-        height: isRealMobile ? '100dvh' : 'auto',
-        minHeight: isRealMobile ? '100dvh' : '100vh',
+        height: isRealMobile ? '100%' : 'auto',
+        minHeight: isRealMobile ? '100%' : '100vh',
         background: isRealMobile ? '#262624' : '#191917',
         fontFamily: "'IBM Plex Sans Thai', system-ui, sans-serif",
         display: 'flex',

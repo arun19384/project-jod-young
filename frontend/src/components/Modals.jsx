@@ -635,6 +635,37 @@ export function SettingsModal({ onReset, onClose }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button
             style={{
+              background: '#2c2b28',
+              border: '1px solid #d97757',
+              color: '#d97757',
+              borderRadius: '12px',
+              padding: '12px',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+            onClick={async () => {
+              try {
+                if ('caches' in window) {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.map(k => caches.delete(k)));
+                }
+                if ('serviceWorker' in navigator) {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  await Promise.all(regs.map(r => r.unregister()));
+                }
+              } catch (e) {}
+              window.location.replace(window.location.origin + '?reload=' + Date.now());
+            }}
+          >
+            🔄 ล้างแคช & โหลดเวอร์ชันล่าสุด (Force Reload)
+          </button>
+          <button
+            style={{
               background: 'transparent',
               border: '1px solid #45433c',
               color: '#d0cdc2',

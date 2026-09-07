@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jod-ngen-v2';
+const CACHE_NAME = 'jod-ngen-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -18,13 +18,11 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate: cleanup all old caches and take control
+// Activate: purge ALL old caches completely
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
+      return Promise.all(keys.map((key) => caches.delete(key)));
     }).then(() => self.clients.claim())
   );
 });
