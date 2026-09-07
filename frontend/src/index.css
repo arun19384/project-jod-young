@@ -1,24 +1,39 @@
 * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-body {
+html, body {
   margin: 0;
   padding: 0;
   background: #191917;
   color: #f0eee6;
   font-family: 'IBM Plex Sans Thai', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overscroll-behavior-y: none;
 }
 
 button {
   font-family: inherit;
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
 }
 
 input, button, select {
   font-family: inherit;
+}
+
+/* Prevent auto-zoom on input focus in iOS Safari */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -33,7 +48,6 @@ input, button, select {
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
 

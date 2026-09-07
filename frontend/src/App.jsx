@@ -129,6 +129,49 @@ export default function App() {
   const [showAddDebtModal, setShowAddDebtModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
+  // PWA & iOS detection states
+  const [isRealMobile, setIsRealMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.innerWidth <= 500 ||
+      window.navigator.standalone ||
+      window.matchMedia('(display-mode: standalone)').matches
+    );
+  });
+
+  const [currentTime, setCurrentTime] = useState(() => {
+    const now = new Date();
+    return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+  });
+
+  const [showIosPrompt, setShowIosPrompt] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    return isIos && !isStandalone && !localStorage.getItem('ios_pwa_dismissed');
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsRealMobile(
+        window.innerWidth <= 500 ||
+        window.navigator.standalone ||
+        window.matchMedia('(display-mode: standalone)').matches
+      );
+    };
+    window.addEventListener('resize', handleResize);
+
+    const clockTimer = setInterval(() => {
+      const now = new Date();
+      setCurrentTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
+    }, 10000);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearInterval(clockTimer);
+    };
+  }, []);
+
   const loadData = async () => {
     try {
       const [sum, txs, accts, plans] = await Promise.all([
@@ -337,15 +380,17 @@ export default function App() {
   const content = (
     <div
       style={{
-        width: isMobileFrame ? '390px' : '100%',
-        maxWidth: isMobileFrame ? '390px' : '640px',
-        height: isMobileFrame ? '844px' : 'auto',
-        minHeight: isMobileFrame ? '844px' : '90vh',
-        flex: 'none',
-        borderRadius: isMobileFrame ? '46px' : '24px',
+        width: '100%',
+        maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
+        height: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : 'auto',
+        minHeight: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
+        flex: isRealMobile ? '1' : 'none',
+        borderRadius: isRealMobile ? '0px' : isMobileFrame ? '46px' : '24px',
         background: '#262624',
-        border: '1px solid #3a3936',
-        boxShadow: isMobileFrame
+        border: isRealMobile ? 'none' : '1px solid #3a3936',
+        boxShadow: isRealMobile
+          ? 'none'
+          : isMobileFrame
           ? '0 40px 80px -20px rgba(0,0,0,.7), 0 0 0 9px #121211'
           : '0 20px 50px rgba(0,0,0,0.5)',
         overflow: 'hidden',
@@ -358,17 +403,21 @@ export default function App() {
       {/* Mobile Top Status Bar */}
       <div
         style={{
-          height: '52px',
+          height: isRealMobile ? 'calc(44px + env(safe-area-inset-top, 0px))' : '52px',
+          paddingTop: isRealMobile ? 'env(safe-area-inset-top, 0px)' : '0px',
           flex: 'none',
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'space-between',
-          padding: '0 24px 8px',
+          paddingLeft: '20px',
+          paddingRight: '20px',
+          paddingBottom: '8px',
           font: "500 13px/1 'IBM Plex Sans Thai'",
           color: '#f0eee6',
+          background: '#262624',
         }}
       >
-        <span>9:41</span>
+        <span style={{ fontWeight: '600' }}>{currentTime}</span>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {/* Backend Status Indicator */}
           <span
@@ -460,7 +509,7 @@ export default function App() {
           flex: 'none',
           borderTop: '1px solid #34332f',
           background: '#2a2926',
-          padding: '9px 14px 26px',
+          padding: '8px 12px calc(10px + env(safe-area-inset-bottom, 14px))',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '4px',
@@ -519,66 +568,118 @@ export default function App() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '18px',
-        padding: '36px 20px 56px',
+        gap: isRealMobile ? '0px' : '18px',
+        padding: isRealMobile ? '0px' : '36px 20px 56px',
+        width: '100%',
+        overflowX: 'hidden',
       }}
     >
-      {/* Header Info */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center', maxWidth: '420px' }}>
-        <div style={{ font: "500 11px/1 'IBM Plex Mono', monospace", letterSpacing: '.14em', color: '#8a8780', textTransform: 'uppercase' }}>
-          Real-World Personal Finance App
+      {/* iOS PWA Install Guide Banner */}
+      {showIosPrompt && (
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '500px',
+            background: 'linear-gradient(135deg, #2e2820, #22211f)',
+            borderBottom: '1px solid #d97757',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            fontSize: '12.5px',
+            color: '#f0eee6',
+            zIndex: 9999,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>📲</span>
+            <div>
+              ติดตั้งบน iPhone: แตะปุ่มแชร์ <strong>[ 📤 ]</strong> ด้านล่าง แล้วเลือก <strong>"เพิ่มไปยังหน้าจอโฮม"</strong>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              localStorage.setItem('ios_pwa_dismissed', 'true');
+              setShowIosPrompt(false);
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              color: '#bbb',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px',
+            }}
+          >
+            ✕
+          </button>
         </div>
-        <div style={{ font: "600 22px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>จดเงิน</div>
-        <div style={{ font: "300 13px/1.5 'IBM Plex Sans Thai'", color: '#8a8780' }}>
-          พิมพ์ประโยคเดียว ระบบตัดยอดเงินในบัญชีจริงอัตโนมัติ
-        </div>
+      )}
 
-        {/* Viewport Toggle & Clean Slate shortcut */}
-        <div style={{ marginTop: '6px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            onClick={() => setIsMobileFrame(true)}
-            style={{
-              border: `1px solid ${isMobileFrame ? '#d97757' : '#3a3936'}`,
-              background: isMobileFrame ? 'rgba(217,119,87,.15)' : '#262624',
-              color: isMobileFrame ? '#d97757' : '#8a8780',
-              padding: '5px 12px',
-              borderRadius: '99px',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
-          >
-            📱 จอมือถือ
-          </button>
-          <button
-            onClick={() => setIsMobileFrame(false)}
-            style={{
-              border: `1px solid ${!isMobileFrame ? '#d97757' : '#3a3936'}`,
-              background: !isMobileFrame ? 'rgba(217,119,87,.15)' : '#262624',
-              color: !isMobileFrame ? '#d97757' : '#8a8780',
-              padding: '5px 12px',
-              borderRadius: '99px',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
-          >
-            🖥️ จอกว้าง
-          </button>
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            style={{
-              border: '1px solid #45433c',
-              background: '#2c2b28',
-              color: '#d0cdc2',
-              padding: '5px 12px',
-              borderRadius: '99px',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
-          >
-            ⚙️ ล้างข้อมูล/เริ่มใหม่
-          </button>
+      {/* Header Info (Desktop only) */}
+      {!isRealMobile && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center', maxWidth: '420px' }}>
+          <div style={{ font: "500 11px/1 'IBM Plex Mono', monospace", letterSpacing: '.14em', color: '#8a8780', textTransform: 'uppercase' }}>
+            Real-World Personal Finance App
+          </div>
+          <div style={{ font: "600 22px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>จดเงิน</div>
+          <div style={{ font: "300 13px/1.5 'IBM Plex Sans Thai'", color: '#8a8780' }}>
+            พิมพ์ประโยคเดียว ระบบตัดยอดเงินในบัญชีจริงอัตโนมัติ
+          </div>
+
+          {/* Viewport Toggle & Clean Slate shortcut */}
+          <div style={{ marginTop: '6px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => setIsMobileFrame(true)}
+              style={{
+                border: `1px solid ${isMobileFrame ? '#d97757' : '#3a3936'}`,
+                background: isMobileFrame ? 'rgba(217,119,87,.15)' : '#262624',
+                color: isMobileFrame ? '#d97757' : '#8a8780',
+                padding: '5px 12px',
+                borderRadius: '99px',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              📱 จอมือถือ
+            </button>
+            <button
+              onClick={() => setIsMobileFrame(false)}
+              style={{
+                border: `1px solid ${!isMobileFrame ? '#d97757' : '#3a3936'}`,
+                background: !isMobileFrame ? 'rgba(217,119,87,.15)' : '#262624',
+                color: !isMobileFrame ? '#d97757' : '#8a8780',
+                padding: '5px 12px',
+                borderRadius: '99px',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              🖥️ จอกว้าง
+            </button>
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              style={{
+                border: '1px solid #45433c',
+                background: '#2c2b28',
+                color: '#d0cdc2',
+                padding: '5px 12px',
+                borderRadius: '99px',
+                fontSize: '12px',
+                cursor: 'pointer',
+              }}
+            >
+              ⚙️ ล้างข้อมูล/เริ่มใหม่
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* App Main Component */}
       {content}
