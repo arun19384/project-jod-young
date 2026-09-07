@@ -468,6 +468,29 @@ func (s *StorageService) DeleteAccount(id string) bool {
 	return found
 }
 
+func (s *StorageService) UpdateAccount(id string, acc models.BankAccount) (*models.BankAccount, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range s.db.Accounts {
+		if s.db.Accounts[i].ID == id {
+			s.db.Accounts[i].Amount = acc.Amount
+			if acc.Name != "" {
+				s.db.Accounts[i].Name = acc.Name
+			}
+			if acc.Role != "" {
+				s.db.Accounts[i].Role = acc.Role
+			}
+			if acc.Tint != "" {
+				s.db.Accounts[i].Tint = acc.Tint
+			}
+			_ = s.saveLocked()
+			res := s.db.Accounts[i]
+			return &res, nil
+		}
+	}
+	return nil, fmt.Errorf("account not found")
+}
+
 // Full Card CRUD
 func (s *StorageService) AddCard(card models.CreditCard) models.CreditCard {
 	s.mu.Lock()

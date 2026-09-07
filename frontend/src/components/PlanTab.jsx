@@ -44,14 +44,14 @@ export default function PlanTab({ data, onOpenAddPlan, onPayPlan, onDeletePlan }
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>ยอดผ่อนต่อเดือน</div>
             <div style={{ font: "600 24px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums' }}>
-              <AnimatedNumber value={monthlyTotal} duration={500} />
+              <AnimatedNumber value={monthlyTotal} duration={200} />
             </div>
           </div>
           <div style={{ width: '1px', background: '#3a3936' }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>ยอดผ่อนเหลือทั้งหมด</div>
             <div style={{ font: "600 24px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums' }}>
-              <AnimatedNumber value={remainingTotal} duration={500} />
+              <AnimatedNumber value={remainingTotal} duration={200} />
             </div>
           </div>
         </div>

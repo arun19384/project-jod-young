@@ -6,6 +6,7 @@ import PlanTab from './components/PlanTab.jsx';
 import {
   EditBudgetModal,
   AddAccountModal,
+  EditAccountModal,
   AddCardModal,
   PayCardModal,
   AddFixedModal,
@@ -26,6 +27,7 @@ import {
   fetchAccounts,
   addAccount,
   deleteAccount,
+  updateAccount,
   addCard,
   payCard,
   deleteCard,
@@ -170,6 +172,7 @@ export default function App() {
   const [showAddPlanModal, setShowAddPlanModal] = useState(false);
   const [showAddDebtModal, setShowAddDebtModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [editAccountTarget, setEditAccountTarget] = useState(null);
   const [loadingText, setLoadingText] = useState(null);
 
   // PWA & iOS detection states
@@ -302,7 +305,7 @@ export default function App() {
     } finally {
       setTimeout(() => {
         setLoadingText(null);
-      }, 260);
+      }, 60);
     }
   };
 
@@ -372,6 +375,14 @@ export default function App() {
       await loadData();
       setShowAddAccountModal(false);
     }, 'กำลังเพิ่มบัญชี...');
+  };
+
+  const handleUpdateAccount = (id, accData) => {
+    return runWithLoading(async () => {
+      await updateAccount(id, accData);
+      await loadData();
+      setEditAccountTarget(null);
+    }, 'กำลังอัปเดตยอดเงิน...');
   };
 
   const handleDeleteAccount = (id) => {
@@ -622,6 +633,7 @@ export default function App() {
             onDeleteFixed={handleDeleteFixed}
             onDeleteAccount={handleDeleteAccount}
             onDeleteCard={handleDeleteCard}
+            onEditAccount={(acc) => setEditAccountTarget(acc)}
             onOpenAddAccount={() => setShowAddAccountModal(true)}
             onOpenAddCard={() => setShowAddCardModal(true)}
             onOpenAddFixed={() => setShowAddFixedModal(true)}
@@ -673,7 +685,7 @@ export default function App() {
             border: '1px solid rgba(217, 119, 87, 0.28)',
             borderRadius: '14px',
             transform: `translateX(calc(${TABS.findIndex((t) => t.id === tab)} * (100% + 4px)))`,
-            transition: 'transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            transition: 'transform 0.18s cubic-bezier(0.25, 1.2, 0.4, 1)',
             pointerEvents: 'none',
             zIndex: 1,
           }}
@@ -706,9 +718,9 @@ export default function App() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  animation: isActive ? 'iconBounce 0.35s ease' : 'none',
+                  animation: isActive ? 'iconBounce 0.18s ease' : 'none',
                   transform: isActive ? 'scale(1.08)' : 'scale(1)',
-                  transition: 'transform 0.2s ease',
+                  transition: 'transform 0.15s ease',
                 }}
               >
                 <IconComponent active={isActive} />
@@ -884,6 +896,13 @@ export default function App() {
         <AddAccountModal
           onSave={handleAddAccount}
           onClose={() => setShowAddAccountModal(false)}
+        />
+      )}
+      {editAccountTarget && (
+        <EditAccountModal
+          account={editAccountTarget}
+          onSave={(data) => handleUpdateAccount(editAccountTarget.id, data)}
+          onClose={() => setEditAccountTarget(null)}
         />
       )}
       {showAddCardModal && (

@@ -259,6 +259,25 @@ func AccountsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == http.MethodPut {
+		pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(pathParts) >= 3 {
+			id := pathParts[2]
+			var acc models.BankAccount
+			if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
+				return
+			}
+			updated, err := db.UpdateAccount(id, acc)
+			if err != nil {
+				writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+				return
+			}
+			writeJSON(w, http.StatusOK, updated)
+			return
+		}
+	}
+
 	if r.Method == http.MethodDelete {
 		pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 		if len(pathParts) >= 3 {

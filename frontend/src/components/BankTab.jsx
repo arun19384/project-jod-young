@@ -9,6 +9,7 @@ export default function BankTab({
   onDeleteFixed,
   onDeleteAccount,
   onDeleteCard,
+  onEditAccount,
   onOpenAddAccount,
   onOpenAddCard,
   onOpenAddFixed,
@@ -29,7 +30,7 @@ export default function BankTab({
         <div>
           <div style={{ font: "600 15px/1.4 'IBM Plex Sans Thai'", color: '#f0eee6' }}>บัญชีธนาคาร</div>
           <div style={{ font: "400 12px/1.4 'IBM Plex Sans Thai'", color: '#78756e', fontVariantNumeric: 'tabular-nums' }}>
-            รวม <AnimatedNumber value={bankTotal} duration={500} /> บาท
+            รวม <AnimatedNumber value={bankTotal} duration={200} /> บาท
           </div>
         </div>
         <button
@@ -59,6 +60,9 @@ export default function BankTab({
           accounts.map((b) => (
             <div
               key={b.id}
+              onClick={() => onEditAccount && onEditAccount(b)}
+              className="pressable"
+              title="แตะเพื่อแก้ไขยอดเงินหรือข้อมูลบัญชี"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -67,21 +71,31 @@ export default function BankTab({
                 border: '1px solid #37362f',
                 borderRadius: '16px',
                 padding: '14px 15px',
+                cursor: 'pointer',
               }}
             >
               <div style={{ width: '3px', alignSelf: 'stretch', borderRadius: '99px', background: b.tint || '#d97757' }} />
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div style={{ font: "500 14px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
-                  {b.name === 'เงินสด/บัญชีหลัก' || b.name === 'Main' ? 'บัญชีหลัก' : b.name}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ font: "500 14px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
+                    {b.name === 'เงินสด/บัญชีหลัก' || b.name === 'Main' ? 'บัญชีหลัก' : b.name}
+                  </span>
+                  <span style={{ fontSize: '10.5px', color: '#d97757' }}>✎</span>
                 </div>
                 <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>{b.role}</div>
               </div>
-              <div style={{ font: "600 16px/1 'IBM Plex Sans Thai'", color: '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>
-                <AnimatedNumber value={b.amt} duration={500} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                <div style={{ font: "600 16px/1 'IBM Plex Sans Thai'", color: '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>
+                  <AnimatedNumber value={b.amt} duration={200} />
+                </div>
+                <span style={{ fontSize: '9px', color: '#78756e' }}>แตะเพื่อแก้</span>
               </div>
               {onDeleteAccount && accounts.length > 1 && (
                 <button
-                  onClick={() => onDeleteAccount(b.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteAccount(b.id);
+                  }}
                   title="ลบบัญชีนี้"
                   className="pressable"
                   style={{
@@ -91,6 +105,7 @@ export default function BankTab({
                     cursor: 'pointer',
                     fontSize: '13px',
                     padding: '4px',
+                    marginLeft: '4px',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = '#d97757')}
                   onMouseLeave={(e) => (e.currentTarget.style.color = '#5a5852')}

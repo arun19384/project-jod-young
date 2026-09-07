@@ -880,6 +880,20 @@ func (d *DBService) DeleteAccount(id string) bool {
 	return ok
 }
 
+func (d *DBService) UpdateAccount(id string, acc models.BankAccount) (*models.BankAccount, error) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	updated, err := d.localStore.UpdateAccount(id, acc)
+	if err != nil {
+		return nil, err
+	}
+	if d.isMySQL && d.sqlDB != nil {
+		_, _ = d.sqlDB.Exec("UPDATE accounts SET amount = ?, name = COALESCE(NULLIF(?, ''), name), role = COALESCE(NULLIF(?, ''), role) WHERE id = ?",
+			updated.Amount, updated.Name, updated.Role, id)
+	}
+	return updated, nil
+}
+
 func (d *DBService) AddCard(card models.CreditCard) models.CreditCard {
 	d.mu.Lock()
 	defer d.mu.Unlock()

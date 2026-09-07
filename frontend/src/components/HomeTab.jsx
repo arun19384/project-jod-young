@@ -218,7 +218,7 @@ export default function HomeTab({
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px' }}>
             <div style={{ font: "600 46px/1 'IBM Plex Sans Thai'", color: '#f0eee6', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-              <AnimatedNumber value={left} duration={650} />
+              <AnimatedNumber value={left} duration={220} />
             </div>
             <div style={{ font: "400 15px/1 'IBM Plex Sans Thai'", color: '#78756e' }}>บาท</div>
           </div>
@@ -239,9 +239,9 @@ export default function HomeTab({
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', font: "400 12px/1.4 'IBM Plex Sans Thai'", color: '#8a8780' }}>
             <span>
-              ใช้ไป <span style={{ color: '#d0cdc2', fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={spent} duration={500} /></span>
+              ใช้ไป <span style={{ color: '#d0cdc2', fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={spent} duration={200} /></span>
             </span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>รับ <AnimatedNumber value={income} duration={500} /></span>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>รับ <AnimatedNumber value={income} duration={200} /></span>
           </div>
         </div>
       </div>
@@ -455,9 +455,9 @@ export default function HomeTab({
                 </div>
                 <div style={{ font: "600 15px/1.2 'IBM Plex Sans Thai'", color: w.amt < 0 ? '#d97757' : '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>
                   {w.isCard ? (
-                    <>ใช้ไป <AnimatedNumber value={Math.abs(w.amt)} duration={500} /></>
+                    <>ใช้ไป <AnimatedNumber value={Math.abs(w.amt)} duration={200} /></>
                   ) : (
-                    <AnimatedNumber value={w.amt} duration={500} />
+                    <AnimatedNumber value={w.amt} duration={200} />
                   )}
                   <span style={{ fontSize: '10px', color: '#78756e', marginLeft: '3px' }}>฿</span>
                 </div>
@@ -506,7 +506,7 @@ export default function HomeTab({
         >
           <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>คงที่ทุกเดือน</div>
           <div style={{ font: "600 20px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums' }}>
-            <AnimatedNumber value={fixedTotal} duration={500} />
+            <AnimatedNumber value={fixedTotal} duration={200} />
           </div>
           <div style={{ font: "400 11px/1.3 'IBM Plex Sans Thai'", color: '#78756e' }}>
             ตัดแล้ว {fixedDone} / {fixedTotalCount}
@@ -529,7 +529,7 @@ export default function HomeTab({
         >
           <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>ผ่อนเดือนนี้</div>
           <div style={{ font: "600 20px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums' }}>
-            <AnimatedNumber value={planMonthly} duration={500} />
+            <AnimatedNumber value={planMonthly} duration={200} />
           </div>
           <div style={{ font: "400 11px/1.3 'IBM Plex Sans Thai'", color: '#78756e' }}>{planCount} รายการ</div>
         </div>

@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
  * AnimatedNumber - Silky 60/120fps count-up animation with easeOutExpo
  * Designed for fintech / luxury banking feel (Apple Card / Revolut style)
  */
-export default function AnimatedNumber({ value = 0, duration = 600, format = true }) {
+export default function AnimatedNumber({ value = 0, duration = 200, format = true }) {
   const numValue = typeof value === 'number' ? value : parseFloat(value) || 0;
   const [displayValue, setDisplayValue] = useState(numValue);
   const prevValRef = useRef(numValue);

@@ -86,6 +86,16 @@ export async function deleteAccount(id) {
   return res.json();
 }
 
+export async function updateAccount(id, payload) {
+  const res = await fetch(`${API_BASE}/accounts/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Failed to update account');
+  return res.json();
+}
+
 export async function addCard(payload) {
   const res = await fetch(`${API_BASE}/cards`, {
     method: 'POST',
