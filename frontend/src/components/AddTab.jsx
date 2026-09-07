@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ReceiptPreviewModal } from './Modals.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -85,6 +86,47 @@ export default function AddTab({
   const [kind, setKind] = useState('out'); // 'out' (จ่าย) or 'in' (รับ)
   const [overrideAcct, setOverrideAcct] = useState(null);
   const [overrideCat, setOverrideCat] = useState(null);
+  const [receiptImage, setReceiptImage] = useState(null);
+  const [previewReceipt, setPreviewReceipt] = useState(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 600;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
+          }
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+        setReceiptImage(dataUrl);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   // Custom Categories state (synced with localStorage)
   const [categories, setCategories] = useState(() => {
@@ -213,8 +255,10 @@ export default function AddTab({
       a: parsed.amount,
       acct: parsed.acct,
       income: parsed.income,
+      receipt: receiptImage,
     });
     setDraft('');
+    setReceiptImage(null);
     setOverrideAcct(null);
     setOverrideCat(null);
   };
@@ -458,6 +502,67 @@ export default function AddTab({
           </div>
         </div>
 
+        {/* Receipt / Slip Attachment Button & Preview */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '0 2px' }}>
+          <input
+            type="file"
+            id="slip-upload-input"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleImageUpload}
+          />
+          <label
+            htmlFor="slip-upload-input"
+            className="pressable"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              background: receiptImage ? 'rgba(217,119,87,0.18)' : '#33322e',
+              border: `1px solid ${receiptImage ? '#d97757' : '#45433c'}`,
+              borderRadius: '10px',
+              color: receiptImage ? '#d97757' : '#c0bcb2',
+              fontSize: '11.5px',
+              cursor: 'pointer',
+              fontWeight: '500',
+            }}
+          >
+            <span>🧾 {receiptImage ? 'เปลี่ยนรูปสลิป' : 'แนบสลิป/รูปใบเสร็จ'}</span>
+          </label>
+
+          {receiptImage && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <img
+                src={receiptImage}
+                alt="Slip preview"
+                onClick={() => setPreviewReceipt(receiptImage)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '6px',
+                  objectFit: 'cover',
+                  border: '1px solid #d97757',
+                  cursor: 'pointer',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setReceiptImage(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#8a8780',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕ ลบ
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Buttons */}
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
@@ -603,6 +708,23 @@ export default function AddTab({
                     {e.c} · {e.acct} · {e.when}
                   </div>
                 </div>
+                {e.receipt && (
+                  <button
+                    onClick={() => setPreviewReceipt(e.receipt)}
+                    title="แตะเพื่อดูรูปสลิป"
+                    style={{
+                      border: '1px solid #4a4842',
+                      background: '#302f2b',
+                      borderRadius: '6px',
+                      padding: '3px 6px',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      color: '#d97757',
+                    }}
+                  >
+                    🧾
+                  </button>
+                )}
                 <div
                   style={{
                     font: "500 13.5px/1 'IBM Plex Sans Thai'",
@@ -818,6 +940,14 @@ export default function AddTab({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Receipt Image Preview Modal */}
+      {previewReceipt && (
+        <ReceiptPreviewModal
+          src={previewReceipt}
+          onClose={() => setPreviewReceipt(null)}
+        />
       )}
     </div>
   );

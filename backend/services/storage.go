@@ -491,6 +491,62 @@ func (s *StorageService) UpdateAccount(id string, acc models.BankAccount) (*mode
 	return nil, fmt.Errorf("account not found")
 }
 
+func (s *StorageService) TransferAccount(fromID, toID string, amount float64, note string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if amount <= 0 {
+		return fmt.Errorf("จำนวนเงินต้องมากกว่า 0 บาท")
+	}
+	if fromID == toID {
+		return fmt.Errorf("ไม่สามารถโอนไปยังบัญชีเดียวกันได้")
+	}
+
+	var fromAcc, toAcc *models.BankAccount
+	for i := range s.db.Accounts {
+		if s.db.Accounts[i].ID == fromID || s.db.Accounts[i].Name == fromID {
+			fromAcc = &s.db.Accounts[i]
+		}
+		if s.db.Accounts[i].ID == toID || s.db.Accounts[i].Name == toID {
+			toAcc = &s.db.Accounts[i]
+		}
+	}
+
+	if fromAcc == nil || toAcc == nil {
+		return fmt.Errorf("ไม่พบบัญชีต้นทางหรือปลายทาง")
+	}
+
+	if fromAcc.Amount < amount {
+		return fmt.Errorf("ยอดเงินในบัญชีต้นทางไม่เพียงพอ (มีอยู่ %.2f บาท)", fromAcc.Amount)
+	}
+
+	fromAcc.Amount -= amount
+	toAcc.Amount += amount
+
+	txTitle := fmt.Sprintf("โอนเงิน: %s ➔ %s", fromAcc.Name, toAcc.Name)
+	if note != "" {
+		txTitle = fmt.Sprintf("โอนเงิน: %s ➔ %s (%s)", fromAcc.Name, toAcc.Name, note)
+	}
+
+	now := time.Now()
+	tx := models.Transaction{
+		ID:           fmt.Sprintf("tx-tr-%d", now.UnixNano()),
+		Title:        txTitle,
+		Category:     "โอนเงิน",
+		CategoryTint: "#5e81ac",
+		Amount:       amount,
+		Account:      fromAcc.Name,
+		Date:         now.Format("2006-01-02"),
+		When:         "วันนี้ " + now.Format("15:04"),
+		IsIncome:     false,
+		IsToday:      true,
+	}
+
+	s.db.Transactions = append([]models.Transaction{tx}, s.db.Transactions...)
+	_ = s.saveLocked()
+	return nil
+}
+
 // Full Card CRUD
 func (s *StorageService) AddCard(card models.CreditCard) models.CreditCard {
 	s.mu.Lock()

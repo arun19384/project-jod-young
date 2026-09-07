@@ -96,6 +96,19 @@ export async function updateAccount(id, payload) {
   return res.json();
 }
 
+export async function transferAccount(fromId, toId, amount, note = '') {
+  const res = await fetch(`${API_BASE}/accounts/transfer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from_id: fromId, to_id: toId, amount: parseFloat(amount), note }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to transfer account');
+  }
+  return res.json();
+}
+
 export async function addCard(payload) {
   const res = await fetch(`${API_BASE}/cards`, {
     method: 'POST',

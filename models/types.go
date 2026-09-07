@@ -11,6 +11,7 @@ type Transaction struct {
 	When         string  `json:"when"`
 	IsIncome     bool    `json:"income"`
 	IsToday      bool    `json:"today"`
+	ReceiptImage string  `json:"receipt,omitempty"`
 }
 
 type Debt struct {

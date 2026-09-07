@@ -890,6 +890,31 @@ func (d *DBService) UpdateAccount(id string, acc models.BankAccount) (*models.Ba
 	return updated, nil
 }
 
+func (d *DBService) TransferAccount(fromID, toID string, amount float64, note string) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	err := d.localStore.TransferAccount(fromID, toID, amount, note)
+	if err != nil {
+		return err
+	}
+
+	if d.isMySQL && d.sqlDB != nil {
+		_, _ = d.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE id = ? OR name = ?", amount, fromID, fromID)
+		_, _ = d.sqlDB.Exec("UPDATE accounts SET amount = amount + ? WHERE id = ? OR name = ?", amount, toID, toID)
+
+		if len(d.localStore.db.Transactions) > 0 {
+			tx := d.localStore.db.Transactions[0]
+			_, _ = d.sqlDB.Exec(`INSERT INTO transactions 
+				(id, title, category, category_tint, amount, account, date, when_text, is_income, is_today) 
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				tx.ID, tx.Title, tx.Category, tx.CategoryTint, tx.Amount, tx.Account, tx.Date, tx.When, tx.IsIncome, tx.IsToday)
+		}
+	}
+
+	return nil
+}
+
 func (d *DBService) AddCard(card models.CreditCard) models.CreditCard {
 	d.mu.Lock()
 	defer d.mu.Unlock()

@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import AnimatedNumber from './AnimatedNumber.jsx';
+import AnalyticsChart from './AnalyticsChart.jsx';
+import { ReceiptPreviewModal } from './Modals.jsx';
+import { getDaysUntilDue } from './BankTab.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -13,7 +16,9 @@ export default function HomeTab({
   onOpenEditBudget,
   onDeleteTransaction,
   onSelectTab,
+  onOpenSearch,
 }) {
+  const [previewReceipt, setPreviewReceipt] = useState(null);
   if (!summary) {
     return (
       <div style={{ padding: '40px 22px', textAlign: 'center', color: '#8a8780' }}>
@@ -166,6 +171,47 @@ export default function HomeTab({
         return selectedIdentifiers.has(tx.acct);
       });
 
+  // Calculate upcoming due bills and credit cards within 7 days
+  const dueSoonItems = useMemo(() => {
+    const list = [];
+    const fixedList = accountsData?.fixed || [];
+    const cardList = accountsData?.cards || [];
+
+    fixedList.forEach((f) => {
+      if (!f.done) {
+        const days = getDaysUntilDue(f.day);
+        if (days !== null && days <= 7) {
+          list.push({
+            id: f.id,
+            name: f.name,
+            amt: f.amt,
+            days,
+            detail: `ทุกวันที่ ${f.day}`,
+            isCard: false,
+          });
+        }
+      }
+    });
+
+    cardList.forEach((c) => {
+      if (c.amt > 0) {
+        const days = getDaysUntilDue(c.due);
+        if (days !== null && days <= 7) {
+          list.push({
+            id: c.id,
+            name: c.name,
+            amt: c.amt,
+            days,
+            detail: `จ่าย ${c.due}`,
+            isCard: true,
+          });
+        }
+      }
+    });
+
+    return list.sort((a, b) => a.days - b.days);
+  }, [accountsData]);
+
   return (
     <div className="animate-fadein" style={{ padding: '6px 20px 28px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
       {/* Month Header with App Logo & Welcome */}
@@ -203,6 +249,39 @@ export default function HomeTab({
           7 / 30
         </div>
       </div>
+
+      {/* Smart Due Date Alert Banner */}
+      {dueSoonItems.length > 0 && (
+        <div
+          onClick={() => onSelectTab && onSelectTab('bank')}
+          className="pressable animate-pop"
+          style={{
+            background: 'linear-gradient(135deg, rgba(217,119,87,0.18) 0%, rgba(201,162,39,0.12) 100%)',
+            border: '1px solid rgba(217,119,87,0.4)',
+            borderRadius: '16px',
+            padding: '12px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '10px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(217,119,87,0.15)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <span style={{ fontSize: '20px' }}>🔔</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+              <div style={{ font: "600 13px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                ครบกำหนดชำระเร็วๆ นี้ ({dueSoonItems.length} รายการ)
+              </div>
+              <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#d97757' }}>
+                {dueSoonItems[0].name} • {dueSoonItems[0].days === 0 ? '🚨 ครบกำหนดวันนี้!' : `⚡ อีก ${dueSoonItems[0].days} วัน`} ({fmt(dueSoonItems[0].amt)} บ.)
+              </div>
+            </div>
+          </div>
+          <span style={{ fontSize: '11.5px', color: '#d0cdc2', flex: 'none' }}>แตะดู ➔</span>
+        </div>
+      )}
 
       {/* Remaining Budget & Bar (Click to edit budget) */}
       <div
@@ -682,6 +761,9 @@ export default function HomeTab({
         </div>
       </div>
 
+      {/* Expense Analytics & Category Breakdown Chart */}
+      <AnalyticsChart transactions={transactions} />
+
       {/* Recent Transactions (Filtered by Selected Wallet) */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
@@ -696,22 +778,44 @@ export default function HomeTab({
             </span>{' '}
             <span style={{ color: '#78756e' }}>({filteredRecent.length} รายการ)</span>
           </div>
-          {!isAllSelected && (
-            <button
-              onClick={() => setSelectedWallets(['ALL'])}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#d97757',
-                fontSize: '11.5px',
-                cursor: 'pointer',
-                padding: '2px 4px',
-                textDecoration: 'underline',
-              }}
-            >
-              แสดงทั้งหมด
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {onOpenSearch && (
+              <button
+                onClick={onOpenSearch}
+                className="pressable"
+                style={{
+                  background: '#302f2b',
+                  border: '1px solid #45433c',
+                  borderRadius: '7px',
+                  padding: '3px 8px',
+                  color: '#d0cdc2',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+              >
+                <span>🔍</span> ค้นหา
+              </button>
+            )}
+            {!isAllSelected && (
+              <button
+                onClick={() => setSelectedWallets(['ALL'])}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#d97757',
+                  fontSize: '11.5px',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  textDecoration: 'underline',
+                }}
+              >
+                แสดงทั้งหมด
+              </button>
+            )}
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -750,6 +854,23 @@ export default function HomeTab({
                     {e.c} · {e.acct} · {e.when}
                   </div>
                 </div>
+                {e.receipt && (
+                  <button
+                    onClick={() => setPreviewReceipt(e.receipt)}
+                    title="แตะเพื่อดูรูปสลิป"
+                    style={{
+                      border: '1px solid #4a4842',
+                      background: '#302f2b',
+                      borderRadius: '6px',
+                      padding: '2px 5px',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      color: '#d97757',
+                    }}
+                  >
+                    🧾
+                  </button>
+                )}
                 <div
                   style={{
                     font: "500 13.5px/1 'IBM Plex Sans Thai'",
@@ -782,6 +903,14 @@ export default function HomeTab({
           )}
         </div>
       </div>
+
+      {/* Receipt Image Preview Modal */}
+      {previewReceipt && (
+        <ReceiptPreviewModal
+          src={previewReceipt}
+          onClose={() => setPreviewReceipt(null)}
+        />
+      )}
     </div>
   );
 }

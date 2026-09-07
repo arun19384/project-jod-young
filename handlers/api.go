@@ -100,6 +100,7 @@ func TransactionsHandler(w http.ResponseWriter, r *http.Request) {
 			Account  string  `json:"acct"`
 			IsIncome bool    `json:"income"`
 			Kind     string  `json:"kind"`
+			Receipt  string  `json:"receipt"`
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -142,6 +143,7 @@ func TransactionsHandler(w http.ResponseWriter, r *http.Request) {
 			Amount:       req.Amount,
 			Account:      req.Account,
 			IsIncome:     req.IsIncome,
+			ReceiptImage: req.Receipt,
 		})
 
 		writeJSON(w, http.StatusCreated, newTx)
@@ -249,6 +251,26 @@ func AccountsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
+		pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+		if len(pathParts) >= 3 && pathParts[2] == "transfer" {
+			var req struct {
+				FromID string  `json:"from_id"`
+				ToID   string  `json:"to_id"`
+				Amount float64 `json:"amount"`
+				Note   string  `json:"note"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})
+				return
+			}
+			if err := db.TransferAccount(req.FromID, req.ToID, req.Amount, req.Note); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]string{"status": "transferred"})
+			return
+		}
+
 		var acc models.BankAccount
 		if err := json.NewDecoder(r.Body).Decode(&acc); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid payload"})

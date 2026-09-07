@@ -40,6 +40,7 @@ func main() {
 	mux.HandleFunc("/api/debts/", handlers.DebtsHandler)
 	mux.HandleFunc("/api/accounts", handlers.AccountsHandler)
 	mux.HandleFunc("/api/accounts/", handlers.AccountsHandler)
+	mux.HandleFunc("/api/accounts/transfer", handlers.AccountsHandler)
 	mux.HandleFunc("/api/cards", handlers.CardsHandler)
 	mux.HandleFunc("/api/cards/", handlers.CardsHandler)
 	mux.HandleFunc("/api/fixed", handlers.FixedHandler)

@@ -3,6 +3,8 @@ import HomeTab from './components/HomeTab.jsx';
 import AddTab from './components/AddTab.jsx';
 import BankTab from './components/BankTab.jsx';
 import PlanTab from './components/PlanTab.jsx';
+import SearchModal from './components/SearchModal.jsx';
+import LockScreen from './components/LockScreen.jsx';
 import {
   EditBudgetModal,
   AddAccountModal,
@@ -13,6 +15,8 @@ import {
   AddPlanModal,
   AddDebtModal,
   SettingsModal,
+  TransferModal,
+  ReceiptPreviewModal,
 } from './components/Modals.jsx';
 import LoadingPopup from './components/LoadingPopup.jsx';
 import {
@@ -28,6 +32,7 @@ import {
   addAccount,
   deleteAccount,
   updateAccount,
+  transferAccount,
   addCard,
   payCard,
   deleteCard,
@@ -172,8 +177,47 @@ export default function App() {
   const [showAddPlanModal, setShowAddPlanModal] = useState(false);
   const [showAddDebtModal, setShowAddDebtModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [previewReceipt, setPreviewReceipt] = useState(null);
   const [editAccountTarget, setEditAccountTarget] = useState(null);
   const [loadingText, setLoadingText] = useState(null);
+
+  // Security / PIN Lock state
+  const [isLocked, setIsLocked] = useState(() => {
+    try {
+      return localStorage.getItem('jod_pin_enabled') === 'true' && Boolean(localStorage.getItem('jod_app_pin'));
+    } catch {
+      return false;
+    }
+  });
+  const [appPin, setAppPin] = useState(() => {
+    try {
+      return localStorage.getItem('jod_app_pin') || '1234';
+    } catch {
+      return '1234';
+    }
+  });
+
+  useEffect(() => {
+    let hideTimestamp = 0;
+    const handleVisibilityChange = () => {
+      const pinEnabled = localStorage.getItem('jod_pin_enabled') === 'true';
+      if (!pinEnabled) return;
+
+      if (document.visibilityState === 'hidden') {
+        hideTimestamp = Date.now();
+      } else if (document.visibilityState === 'visible') {
+        const timeoutSec = parseInt(localStorage.getItem('jod_pin_timeout') || '0', 10);
+        const elapsedSec = (Date.now() - hideTimestamp) / 1000;
+        if (elapsedSec >= timeoutSec) {
+          setIsLocked(true);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   // PWA & iOS detection states
   const checkIsMobile = () => {
@@ -385,6 +429,14 @@ export default function App() {
     }, 'กำลังอัปเดตยอดเงิน...');
   };
 
+  const handleTransferAccount = ({ fromId, toId, amount, note }) => {
+    return runWithLoading(async () => {
+      await transferAccount(fromId, toId, amount, note);
+      await loadData();
+      setShowTransferModal(false);
+    }, 'กำลังทำรายการโอนเงิน...');
+  };
+
   const handleDeleteAccount = (id) => {
     return runWithLoading(async () => {
       await deleteAccount(id);
@@ -576,10 +628,28 @@ export default function App() {
             🔄 รีเฟรช
           </button>
 
+          {/* Search Button */}
+          <button
+            onClick={() => setShowSearchModal(true)}
+            title="ค้นหาและกรองรายการธุรกรรม"
+            className="pressable"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#8a8780',
+              cursor: 'pointer',
+              fontSize: '15px',
+              padding: '2px',
+            }}
+          >
+            🔍
+          </button>
+
           {/* Settings Button */}
           <button
             onClick={() => setShowSettingsModal(true)}
-            title="การตั้งค่าข้อมูล (ล้าง/คืนค่า)"
+            title="การตั้งค่าข้อมูล (ล้าง/คืนค่า/ส่งออก)"
+            className="pressable"
             style={{
               background: 'transparent',
               border: 'none',
@@ -616,6 +686,7 @@ export default function App() {
             onOpenEditBudget={() => setShowBudgetModal(true)}
             onDeleteTransaction={handleDeleteTransaction}
             onSelectTab={(newTab) => setTab(newTab)}
+            onOpenSearch={() => setShowSearchModal(true)}
           />
         )}
         {tab === 'add' && (
@@ -635,6 +706,7 @@ export default function App() {
             onDeleteCard={handleDeleteCard}
             onEditAccount={(acc) => setEditAccountTarget(acc)}
             onOpenAddAccount={() => setShowAddAccountModal(true)}
+            onOpenTransferModal={() => setShowTransferModal(true)}
             onOpenAddCard={() => setShowAddCardModal(true)}
             onOpenAddFixed={() => setShowAddFixedModal(true)}
             onOpenPayCard={(card) => setPayCardTarget(card)}
@@ -939,8 +1011,46 @@ export default function App() {
       )}
       {showSettingsModal && (
         <SettingsModal
+          transactions={transactions}
           onReset={handleReset}
           onClose={() => setShowSettingsModal(false)}
+          onPinConfigChange={() => {
+            const pin = localStorage.getItem('jod_app_pin') || '1234';
+            setAppPin(pin);
+          }}
+        />
+      )}
+
+      {showSearchModal && (
+        <SearchModal
+          transactions={transactions}
+          accounts={accountsData?.accounts || []}
+          onDeleteTransaction={handleDeleteTransaction}
+          onViewReceipt={(src) => setPreviewReceipt(src)}
+          onClose={() => setShowSearchModal(false)}
+        />
+      )}
+
+      {showTransferModal && (
+        <TransferModal
+          accounts={accountsData?.accounts || []}
+          onTransfer={handleTransferAccount}
+          onClose={() => setShowTransferModal(false)}
+        />
+      )}
+
+      {previewReceipt && (
+        <ReceiptPreviewModal
+          src={previewReceipt}
+          onClose={() => setPreviewReceipt(null)}
+        />
+      )}
+
+      {/* 4-digit PIN / Face ID Lock Screen */}
+      {isLocked && (
+        <LockScreen
+          expectedPin={appPin}
+          onUnlock={() => setIsLocked(false)}
         />
       )}
 

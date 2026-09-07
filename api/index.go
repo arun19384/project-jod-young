@@ -1,4 +1,4 @@
-﻿package handler
+package handler
 
 import (
 	"ai-in-my-area-backend/handlers"
@@ -44,6 +44,7 @@ func initRoutes() {
 	mux.HandleFunc("/api/debts/", handlers.DebtsHandler)
 	mux.HandleFunc("/api/accounts", handlers.AccountsHandler)
 	mux.HandleFunc("/api/accounts/", handlers.AccountsHandler)
+	mux.HandleFunc("/api/accounts/transfer", handlers.AccountsHandler)
 	mux.HandleFunc("/api/cards", handlers.CardsHandler)
 	mux.HandleFunc("/api/cards/", handlers.CardsHandler)
 	mux.HandleFunc("/api/fixed", handlers.FixedHandler)
