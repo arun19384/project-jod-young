@@ -171,14 +171,18 @@ export default function App() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // PWA & iOS detection states
-  const [isRealMobile, setIsRealMobile] = useState(() => {
+  const checkIsMobile = () => {
     if (typeof window === 'undefined') return false;
-    return (
-      window.innerWidth <= 500 ||
+    return Boolean(
+      /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+      window.innerWidth <= 768 ||
       window.navigator.standalone ||
-      window.matchMedia('(display-mode: standalone)').matches
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(pointer: coarse)').matches
     );
-  });
+  };
+
+  const [isRealMobile, setIsRealMobile] = useState(checkIsMobile);
 
   const [currentTime, setCurrentTime] = useState(() => {
     const now = new Date();
@@ -215,13 +219,10 @@ export default function App() {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsRealMobile(
-        window.innerWidth <= 500 ||
-        window.navigator.standalone ||
-        window.matchMedia('(display-mode: standalone)').matches
-      );
+      setIsRealMobile(checkIsMobile());
     };
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
 
     const clockTimer = setInterval(() => {
       const now = new Date();
@@ -230,6 +231,7 @@ export default function App() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
       clearInterval(clockTimer);
     };
   }, []);
@@ -443,11 +445,14 @@ export default function App() {
     <div
       style={{
         position: isRealMobile ? 'fixed' : 'relative',
-        inset: isRealMobile ? 0 : 'auto',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         width: '100%',
         maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
-        height: isRealMobile ? '100%' : isMobileFrame ? '844px' : '90vh',
-        maxHeight: isRealMobile ? '100%' : isMobileFrame ? '844px' : '90vh',
+        height: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
+        maxHeight: isRealMobile ? '100dvh' : isMobileFrame ? '844px' : '90vh',
         flex: isRealMobile ? '1' : 'none',
         borderRadius: isRealMobile ? '0px' : isMobileFrame ? '46px' : '24px',
         background: '#262624',
@@ -538,7 +543,16 @@ export default function App() {
       </div>
 
       {/* Main Scrollable View Area */}
-      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', paddingBottom: '24px' }}>
+      <div
+        style={{
+          flex: '1 1 0%',
+          minHeight: 0,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          paddingBottom: isRealMobile ? 'calc(76px + env(safe-area-inset-bottom, 24px))' : '24px',
+        }}
+      >
         {tab === 'home' && (
           <HomeTab
             summary={summary}
@@ -589,14 +603,19 @@ export default function App() {
         aria-label="เมนูหลัก"
         style={{
           flex: 'none',
-          position: 'relative',
+          position: isRealMobile ? 'fixed' : 'relative',
+          bottom: 0,
+          left: 0,
+          right: 0,
           width: '100%',
+          maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
+          margin: '0 auto',
           zIndex: 100,
           borderTop: '1px solid #34332f',
           background: 'rgba(38, 38, 36, 0.98)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          padding: '7px 12px calc(8px + env(safe-area-inset-bottom, 0px))',
+          padding: '7px 12px calc(8px + env(safe-area-inset-bottom, 20px))',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '4px',
@@ -654,8 +673,9 @@ export default function App() {
   return (
     <div
       style={{
-        minHeight: '100vh',
-        background: '#191917',
+        height: isRealMobile ? '100dvh' : 'auto',
+        minHeight: isRealMobile ? '100dvh' : '100vh',
+        background: isRealMobile ? '#262624' : '#191917',
         fontFamily: "'IBM Plex Sans Thai', system-ui, sans-serif",
         display: 'flex',
         flexDirection: 'column',
@@ -663,7 +683,7 @@ export default function App() {
         gap: isRealMobile ? '0px' : '18px',
         padding: isRealMobile ? '0px' : '36px 20px 56px',
         width: '100%',
-        overflowX: 'hidden',
+        overflow: isRealMobile ? 'hidden' : 'visible',
       }}
     >
       {/* iOS PWA Install Guide Banner */}
