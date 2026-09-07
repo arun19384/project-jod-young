@@ -681,6 +681,24 @@ export default function App() {
           boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
         }}
       >
+        {/* Liquid Sliding Pill Indicator */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            bottom: isRealMobile ? 'max(env(safe-area-inset-bottom, 34px), 34px)' : '10px',
+            left: '12px',
+            width: 'calc((100% - 24px - 12px) / 4)',
+            background: 'rgba(217, 119, 87, 0.16)',
+            border: '1px solid rgba(217, 119, 87, 0.28)',
+            borderRadius: '14px',
+            transform: `translateX(calc(${TABS.findIndex((t) => t.id === tab)} * (100% + 4px)))`,
+            transition: 'transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
+
         {TABS.map((t) => {
           const isActive = tab === t.id;
           const IconComponent = t.Icon;
@@ -688,17 +706,19 @@ export default function App() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
+              className="pressable"
               style={{
                 border: 'none',
-                background: isActive ? 'rgba(217, 119, 87, 0.14)' : 'transparent',
-                borderRadius: '12px',
+                background: 'transparent',
+                borderRadius: '14px',
                 padding: '7px 4px 6px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '4px',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                position: 'relative',
+                zIndex: 2,
               }}
             >
               <div
@@ -706,8 +726,9 @@ export default function App() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  animation: isActive ? 'iconBounce 0.35s ease' : 'none',
                   transform: isActive ? 'scale(1.08)' : 'scale(1)',
-                  transition: 'transform 0.15s ease',
+                  transition: 'transform 0.2s ease',
                 }}
               >
                 <IconComponent active={isActive} />
@@ -717,7 +738,7 @@ export default function App() {
                   font: `${isActive ? '600' : '400'} 11px/1 'IBM Plex Sans Thai'`,
                   color: isActive ? '#d97757' : '#8a8780',
                   letterSpacing: '0.01em',
-                  transition: 'color 0.15s ease',
+                  transition: 'color 0.2s ease',
                 }}
               >
                 {t.label}

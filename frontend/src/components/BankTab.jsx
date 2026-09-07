@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AnimatedNumber from './AnimatedNumber.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -28,11 +29,12 @@ export default function BankTab({
         <div>
           <div style={{ font: "600 15px/1.4 'IBM Plex Sans Thai'", color: '#f0eee6' }}>บัญชีธนาคาร</div>
           <div style={{ font: "400 12px/1.4 'IBM Plex Sans Thai'", color: '#78756e', fontVariantNumeric: 'tabular-nums' }}>
-            รวม {fmt(bankTotal)} บาท
+            รวม <AnimatedNumber value={bankTotal} duration={500} /> บาท
           </div>
         </div>
         <button
           onClick={onOpenAddAccount}
+          className="pressable"
           style={{
             background: 'transparent',
             border: '1px solid #45433c',
@@ -75,12 +77,13 @@ export default function BankTab({
                 <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>{b.role}</div>
               </div>
               <div style={{ font: "600 16px/1 'IBM Plex Sans Thai'", color: '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>
-                {fmt(b.amt)}
+                <AnimatedNumber value={b.amt} duration={500} />
               </div>
               {onDeleteAccount && accounts.length > 1 && (
                 <button
                   onClick={() => onDeleteAccount(b.id)}
                   title="ลบบัญชีนี้"
+                  className="pressable"
                   style={{
                     border: 'none',
                     background: 'transparent',
@@ -106,6 +109,7 @@ export default function BankTab({
           <div style={{ font: "500 12px/1 'IBM Plex Sans Thai'", color: '#8a8780' }}>บัตรเครดิต</div>
           <button
             onClick={onOpenAddCard}
+            className="pressable"
             style={{
               background: 'transparent',
               border: '1px solid #45433c',
@@ -182,6 +186,7 @@ export default function BankTab({
                   <div style={{ display: 'flex', gap: '7px' }}>
                     <button
                       onClick={() => setOpenCard(isOpen ? null : c.id)}
+                      className="pressable"
                       style={{
                         flex: 1,
                         border: '1px solid #45433c',
@@ -198,6 +203,7 @@ export default function BankTab({
                     </button>
                     <button
                       onClick={() => onOpenPayCard && onOpenPayCard(c)}
+                      className="pressable"
                       style={{
                         flex: 'none',
                         border: '1px solid #45433c',
@@ -320,6 +326,7 @@ export default function BankTab({
           </div>
           <button
             onClick={onOpenAddFixed}
+            className="pressable"
             style={{
               background: 'transparent',
               border: '1px solid #45433c',
@@ -352,9 +359,10 @@ export default function BankTab({
               >
                 <div
                   onClick={() => onToggleFixed && onToggleFixed(f.id)}
+                  className="pressable"
                   style={{
-                    width: '15px',
-                    height: '15px',
+                    width: '18px',
+                    height: '18px',
                     flex: 'none',
                     borderRadius: '5px',
                     background: f.done ? '#6c9a76' : 'transparent',
@@ -362,7 +370,7 @@ export default function BankTab({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    font: "600 9px/1 'IBM Plex Mono', monospace",
+                    font: "600 10px/1 'IBM Plex Mono', monospace",
                     color: '#1a1a18',
                     cursor: 'pointer',
                     transition: 'all 0.15s',

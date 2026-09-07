@@ -1,4 +1,5 @@
 import React from 'react';
+import AnimatedNumber from './AnimatedNumber.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -15,6 +16,7 @@ export default function PlanTab({ data, onOpenAddPlan, onPayPlan, onDeletePlan }
           <div style={{ font: "600 15px/1.4 'IBM Plex Sans Thai'", color: '#f0eee6' }}>รายการผ่อนชำระ</div>
           <button
             onClick={onOpenAddPlan}
+            className="pressable"
             style={{
               background: 'transparent',
               border: '1px solid #45433c',
@@ -42,14 +44,14 @@ export default function PlanTab({ data, onOpenAddPlan, onPayPlan, onDeletePlan }
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>ยอดผ่อนต่อเดือน</div>
             <div style={{ font: "600 24px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums' }}>
-              {fmt(monthlyTotal)}
+              <AnimatedNumber value={monthlyTotal} duration={500} />
             </div>
           </div>
           <div style={{ width: '1px', background: '#3a3936' }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>ยอดผ่อนเหลือทั้งหมด</div>
             <div style={{ font: "600 24px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums' }}>
-              {fmt(remainingTotal)}
+              <AnimatedNumber value={remainingTotal} duration={500} />
             </div>
           </div>
         </div>
@@ -123,6 +125,7 @@ export default function PlanTab({ data, onOpenAddPlan, onPayPlan, onDeletePlan }
                     {!isFinished && onPayPlan && (
                       <button
                         onClick={() => onPayPlan(p.id)}
+                        className="pressable"
                         style={{
                           border: '1px solid #d97757',
                           background: 'rgba(217,119,87,0.15)',

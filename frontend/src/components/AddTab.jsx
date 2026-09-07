@@ -303,8 +303,9 @@ export default function AddTab({
               <>
                 {/* Amount chip */}
                 <div
-                  className="animate-pop"
+                  className="animate-pop pressable"
                   style={{
+                    animationDelay: '0ms',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -314,6 +315,7 @@ export default function AddTab({
                     padding: '5px 9px',
                     font: "400 11.5px/1 'IBM Plex Sans Thai'",
                     color: '#d0cdc2',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                   }}
                 >
                   <span style={{ color: '#78756e' }}>ยอด:</span>
@@ -322,8 +324,9 @@ export default function AddTab({
 
                 {/* Category selector dropdown chip */}
                 <div
-                  className="animate-pop"
+                  className="animate-pop pressable"
                   style={{
+                    animationDelay: '50ms',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -333,6 +336,7 @@ export default function AddTab({
                     padding: '4px 8px',
                     font: "400 11.5px/1 'IBM Plex Sans Thai'",
                     color: '#d0cdc2',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                   }}
                 >
                   <span style={{ color: '#78756e' }}>หมวด:</span>
@@ -369,8 +373,9 @@ export default function AddTab({
 
                 {/* Account selector chip */}
                 <div
-                  className="animate-pop"
+                  className="animate-pop pressable"
                   style={{
+                    animationDelay: '100ms',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -380,6 +385,7 @@ export default function AddTab({
                     padding: '4px 8px',
                     font: "400 11.5px/1 'IBM Plex Sans Thai'",
                     color: '#d0cdc2',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                   }}
                 >
                   <span style={{ color: '#78756e' }}>ตัดบัญชี:</span>
@@ -423,9 +429,10 @@ export default function AddTab({
 
                 {/* Income / Expense toggle chip */}
                 <div
-                  className="animate-pop"
+                  className="animate-pop pressable"
                   onClick={() => setKind((k) => (k === 'out' ? 'in' : 'out'))}
                   style={{
+                    animationDelay: '150ms',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -436,6 +443,7 @@ export default function AddTab({
                     font: "400 11.5px/1 'IBM Plex Sans Thai'",
                     color: parsed.income ? '#6c9a76' : '#d97757',
                     cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
                   }}
                   title="คลิกเพื่อสลับ รายรับ / รายจ่าย"
                 >
@@ -454,6 +462,7 @@ export default function AddTab({
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={handleSave}
+            className="pressable"
             style={{
               flex: 1,
               border: 'none',
@@ -463,15 +472,14 @@ export default function AddTab({
               color: '#1a1a18',
               font: "600 14.5px/1 'IBM Plex Sans Thai'",
               cursor: 'pointer',
-              transition: 'filter 0.15s',
+              boxShadow: '0 4px 14px rgba(217,119,87,0.3)',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.filter = 'brightness(1.08)')}
-            onMouseLeave={(e) => (e.currentTarget.style.filter = 'none')}
           >
             บันทึก
           </button>
           <button
             onClick={() => setKind((k) => (k === 'out' ? 'in' : 'out'))}
+            className="pressable"
             style={{
               flex: 'none',
               border: '1px solid #45433c',
@@ -481,7 +489,6 @@ export default function AddTab({
               color: kind === 'in' ? '#6c9a76' : '#a8a49a',
               font: "500 13px/1 'IBM Plex Sans Thai'",
               cursor: 'pointer',
-              transition: 'all 0.15s',
             }}
           >
             {kind === 'out' ? 'จ่าย' : 'รับ'}

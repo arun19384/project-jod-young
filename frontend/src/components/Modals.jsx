@@ -4,9 +4,10 @@ import { fetchDBStatus, connectDB } from '../services/api.js';
 const modalOverlayStyle = {
   position: 'fixed',
   inset: 0,
-  background: 'rgba(0,0,0,0.7)',
-  backdropFilter: 'blur(3px)',
-  zIndex: 1000,
+  background: 'rgba(0,0,0,0.72)',
+  backdropFilter: 'blur(6px)',
+  WebkitBackdropFilter: 'blur(6px)',
+  zIndex: 9999,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -16,15 +17,15 @@ const modalOverlayStyle = {
 const modalBoxStyle = {
   background: '#262624',
   border: '1px solid #3a3936',
-  borderRadius: '20px',
+  borderRadius: '24px',
   width: '100%',
-  maxWidth: '380px',
-  padding: '20px 20px 18px',
+  maxWidth: '400px',
+  padding: '22px 20px 20px',
   display: 'flex',
   flexDirection: 'column',
   gap: '16px',
-  boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
-  maxHeight: '90vh',
+  boxShadow: '0 25px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06)',
+  maxHeight: '88vh',
   overflowY: 'auto',
 };
 
@@ -68,13 +69,29 @@ const cancelBtnStyle = {
   cursor: 'pointer',
 };
 
+function SheetGrabber() {
+  return (
+    <div
+      style={{
+        width: '36px',
+        height: '4px',
+        borderRadius: '99px',
+        background: '#4a4843',
+        margin: '-6px auto 6px',
+        flex: 'none',
+      }}
+    />
+  );
+}
+
 // 1. Edit Monthly Budget Modal
 export function EditBudgetModal({ currentBudget, onSave, onClose }) {
   const [budget, setBudget] = useState(currentBudget || 45000);
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={modalBoxStyle} className="animate-pop">
+      <div style={modalBoxStyle} className="animate-spring-sheet">
+        <SheetGrabber />
         <div style={{ font: "600 16px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
           ตั้งค่างบประมาณ / เงินเดือนรายเดือน
         </div>
@@ -89,10 +106,10 @@ export function EditBudgetModal({ currentBudget, onSave, onClose }) {
           />
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button style={primaryBtnStyle} onClick={() => onSave(budget)}>
+          <button style={primaryBtnStyle} className="pressable" onClick={() => onSave(budget)}>
             บันทึก
           </button>
-          <button style={cancelBtnStyle} onClick={onClose}>
+          <button style={cancelBtnStyle} className="pressable" onClick={onClose}>
             ยกเลิก
           </button>
         </div>
@@ -112,7 +129,8 @@ export function AddAccountModal({ onSave, onClose }) {
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={modalBoxStyle} className="animate-pop">
+      <div style={modalBoxStyle} className="animate-spring-sheet">
+        <SheetGrabber />
         <div style={{ font: "600 16px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
           เพิ่มบัญชีธนาคารใหม่
         </div>
@@ -171,6 +189,7 @@ export function AddAccountModal({ onSave, onClose }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             style={primaryBtnStyle}
+            className="pressable"
             onClick={() => {
               if (!name.trim()) return;
               onSave({ name: name.trim(), role: role.trim(), amt: parseFloat(amt) || 0, tint });
@@ -178,7 +197,7 @@ export function AddAccountModal({ onSave, onClose }) {
           >
             เพิ่มบัญชี
           </button>
-          <button style={cancelBtnStyle} onClick={onClose}>
+          <button style={cancelBtnStyle} className="pressable" onClick={onClose}>
             ยกเลิก
           </button>
         </div>
@@ -197,7 +216,8 @@ export function AddCardModal({ onSave, onClose }) {
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={modalBoxStyle} className="animate-pop">
+      <div style={modalBoxStyle} className="animate-spring-sheet">
+        <SheetGrabber />
         <div style={{ font: "600 16px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
           เพิ่มบัตรเครดิตใหม่
         </div>
@@ -261,6 +281,7 @@ export function AddCardModal({ onSave, onClose }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             style={primaryBtnStyle}
+            className="pressable"
             onClick={() => {
               if (!name.trim()) return;
               onSave({
@@ -276,7 +297,7 @@ export function AddCardModal({ onSave, onClose }) {
           >
             บันทึกบัตร
           </button>
-          <button style={cancelBtnStyle} onClick={onClose}>
+          <button style={cancelBtnStyle} className="pressable" onClick={onClose}>
             ยกเลิก
           </button>
         </div>
@@ -292,7 +313,8 @@ export function PayCardModal({ card, accounts = [], onConfirm, onClose }) {
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={modalBoxStyle} className="animate-pop">
+      <div style={modalBoxStyle} className="animate-spring-sheet">
+        <SheetGrabber />
         <div style={{ font: "600 16px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
           ชำระยอดหนี้ {card.name}
         </div>
@@ -324,11 +346,12 @@ export function PayCardModal({ card, accounts = [], onConfirm, onClose }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             style={primaryBtnStyle}
+            className="pressable"
             onClick={() => onConfirm(card.id, selectedAcc, amount)}
           >
             ยืนยันชำระ
           </button>
-          <button style={cancelBtnStyle} onClick={onClose}>
+          <button style={cancelBtnStyle} className="pressable" onClick={onClose}>
             ยกเลิก
           </button>
         </div>
@@ -345,7 +368,8 @@ export function AddFixedModal({ onSave, onClose }) {
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={modalBoxStyle} className="animate-pop">
+      <div style={modalBoxStyle} className="animate-spring-sheet">
+        <SheetGrabber />
         <div style={{ font: "600 16px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
           เพิ่มค่าใช้จ่ายคงที่รายเดือน
         </div>
@@ -387,6 +411,7 @@ export function AddFixedModal({ onSave, onClose }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             style={primaryBtnStyle}
+            className="pressable"
             onClick={() => {
               if (!name.trim()) return;
               onSave({ name: name.trim(), amt: parseFloat(amt) || 0, day, done: false });
@@ -394,7 +419,7 @@ export function AddFixedModal({ onSave, onClose }) {
           >
             บันทึกบิล
           </button>
-          <button style={cancelBtnStyle} onClick={onClose}>
+          <button style={cancelBtnStyle} className="pressable" onClick={onClose}>
             ยกเลิก
           </button>
         </div>
@@ -412,7 +437,8 @@ export function AddPlanModal({ onSave, onClose }) {
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={modalBoxStyle} className="animate-pop">
+      <div style={modalBoxStyle} className="animate-spring-sheet">
+        <SheetGrabber />
         <div style={{ font: "600 16px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
           เพิ่มรายการผ่อนชำระ
         </div>
@@ -462,6 +488,7 @@ export function AddPlanModal({ onSave, onClose }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             style={primaryBtnStyle}
+            className="pressable"
             onClick={() => {
               if (!name.trim()) return;
               onSave({
@@ -474,7 +501,7 @@ export function AddPlanModal({ onSave, onClose }) {
           >
             เพิ่มรายการผ่อน
           </button>
-          <button style={cancelBtnStyle} onClick={onClose}>
+          <button style={cancelBtnStyle} className="pressable" onClick={onClose}>
             ยกเลิก
           </button>
         </div>
@@ -491,7 +518,8 @@ export function AddDebtModal({ onSave, onClose }) {
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={modalBoxStyle} className="animate-pop">
+      <div style={modalBoxStyle} className="animate-spring-sheet">
+        <SheetGrabber />
         <div style={{ font: "600 16px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
           เพิ่มรายการออกให้ก่อน / ติดเงิน
         </div>
@@ -531,6 +559,7 @@ export function AddDebtModal({ onSave, onClose }) {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             style={primaryBtnStyle}
+            className="pressable"
             onClick={() => {
               if (!name.trim() || !a) return;
               onSave({ name: name.trim(), what: what.trim(), a: parseFloat(a) || 0, cleared: false });
@@ -538,7 +567,7 @@ export function AddDebtModal({ onSave, onClose }) {
           >
             บันทึก
           </button>
-          <button style={cancelBtnStyle} onClick={onClose}>
+          <button style={cancelBtnStyle} className="pressable" onClick={onClose}>
             ยกเลิก
           </button>
         </div>
@@ -577,7 +606,8 @@ export function SettingsModal({ onReset, onClose }) {
 
   return (
     <div style={modalOverlayStyle}>
-      <div style={modalBoxStyle} className="animate-pop">
+      <div style={modalBoxStyle} className="animate-spring-sheet">
+        <SheetGrabber />
         <div style={{ font: "600 16px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
           การตั้งค่าและฐานข้อมูล
         </div>
@@ -616,6 +646,7 @@ export function SettingsModal({ onReset, onClose }) {
           <button
             onClick={handleConnect}
             disabled={connecting}
+            className="pressable"
             style={{
               background: '#d97757',
               color: '#1a1a18',
@@ -634,6 +665,7 @@ export function SettingsModal({ onReset, onClose }) {
         {/* Clean Slate & Reset Options */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button
+            className="pressable"
             style={{
               background: '#2c2b28',
               border: '1px solid #d97757',
@@ -665,6 +697,7 @@ export function SettingsModal({ onReset, onClose }) {
             🔄 ล้างแคช & โหลดเวอร์ชันล่าสุด (Force Reload)
           </button>
           <button
+            className="pressable"
             style={{
               background: 'transparent',
               border: '1px solid #45433c',
@@ -679,6 +712,7 @@ export function SettingsModal({ onReset, onClose }) {
             🧹 ล้างข้อมูลเป็น 0 (เริ่มใช้งานจริงด้วยตัวเอง)
           </button>
           <button
+            className="pressable"
             style={{
               background: 'transparent',
               border: '1px solid #45433c',
@@ -694,7 +728,7 @@ export function SettingsModal({ onReset, onClose }) {
           </button>
         </div>
 
-        <button style={{ ...cancelBtnStyle, width: '100%', marginTop: '4px' }} onClick={onClose}>
+        <button style={{ ...cancelBtnStyle, width: '100%', marginTop: '4px' }} className="pressable" onClick={onClose}>
           ปิด
         </button>
       </div>

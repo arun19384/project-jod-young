@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AnimatedNumber from './AnimatedNumber.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -205,6 +206,7 @@ export default function HomeTab({
 
       {/* Remaining Budget & Bar (Click to edit budget) */}
       <div
+        className="pressable"
         style={{ display: 'flex', flexDirection: 'column', gap: '14px', cursor: 'pointer' }}
         onClick={onOpenEditBudget}
         title="แตะเพื่อแก้ไขงบประมาณ/เงินเดือน"
@@ -216,7 +218,7 @@ export default function HomeTab({
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px' }}>
             <div style={{ font: "600 46px/1 'IBM Plex Sans Thai'", color: '#f0eee6', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-              {fmt(left)}
+              <AnimatedNumber value={left} duration={650} />
             </div>
             <div style={{ font: "400 15px/1 'IBM Plex Sans Thai'", color: '#78756e' }}>บาท</div>
           </div>
@@ -225,20 +227,21 @@ export default function HomeTab({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ height: '8px', borderRadius: '99px', background: '#33322f', overflow: 'hidden', display: 'flex' }}>
             <div
+              className="animate-shimmer"
               style={{
                 height: '100%',
-                background: '#d97757',
                 borderRadius: '99px',
-                transition: 'width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                transition: 'width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 width: `${spentPct}%`,
+                boxShadow: '0 0 10px rgba(217, 119, 87, 0.4)',
               }}
             />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', font: "400 12px/1.4 'IBM Plex Sans Thai'", color: '#8a8780' }}>
             <span>
-              ใช้ไป <span style={{ color: '#d0cdc2', fontVariantNumeric: 'tabular-nums' }}>{fmt(spent)}</span>
+              ใช้ไป <span style={{ color: '#d0cdc2', fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={spent} duration={500} /></span>
             </span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>รับ {fmt(income)}</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>รับ <AnimatedNumber value={income} duration={500} /></span>
           </div>
         </div>
       </div>
@@ -417,6 +420,7 @@ export default function HomeTab({
               <div
                 key={w.id}
                 onClick={() => onSelectTab && onSelectTab('bank')}
+                className="pressable"
                 style={{
                   background: '#242321',
                   border: '1px solid #373630',
@@ -450,7 +454,11 @@ export default function HomeTab({
                   )}
                 </div>
                 <div style={{ font: "600 15px/1.2 'IBM Plex Sans Thai'", color: w.amt < 0 ? '#d97757' : '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>
-                  {w.isCard ? `ใช้ไป ${fmt(Math.abs(w.amt))}` : fmt(w.amt)}
+                  {w.isCard ? (
+                    <>ใช้ไป <AnimatedNumber value={Math.abs(w.amt)} duration={500} /></>
+                  ) : (
+                    <AnimatedNumber value={w.amt} duration={500} />
+                  )}
                   <span style={{ fontSize: '10px', color: '#78756e', marginLeft: '3px' }}>฿</span>
                 </div>
                 <div style={{ font: "400 10.5px/1.2 'IBM Plex Sans Thai'", color: '#78756e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -463,6 +471,7 @@ export default function HomeTab({
           {visibleWallets.length > 4 && (
             <button
               onClick={() => onSelectTab && onSelectTab('bank')}
+              className="pressable"
               style={{
                 background: 'transparent',
                 border: 'none',
@@ -483,6 +492,7 @@ export default function HomeTab({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         <div
           onClick={() => onSelectTab && onSelectTab('bank')}
+          className="pressable"
           style={{
             background: '#302f2c',
             border: '1px solid #3a3936',
@@ -492,14 +502,11 @@ export default function HomeTab({
             flexDirection: 'column',
             gap: '5px',
             cursor: 'pointer',
-            transition: 'border-color 0.2s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#6c6a62')}
-          onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#3a3936')}
         >
           <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>คงที่ทุกเดือน</div>
           <div style={{ font: "600 20px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums' }}>
-            {fmt(fixedTotal)}
+            <AnimatedNumber value={fixedTotal} duration={500} />
           </div>
           <div style={{ font: "400 11px/1.3 'IBM Plex Sans Thai'", color: '#78756e' }}>
             ตัดแล้ว {fixedDone} / {fixedTotalCount}
@@ -508,6 +515,7 @@ export default function HomeTab({
 
         <div
           onClick={() => onSelectTab && onSelectTab('plan')}
+          className="pressable"
           style={{
             background: '#302f2c',
             border: '1px solid #3a3936',
@@ -517,14 +525,11 @@ export default function HomeTab({
             flexDirection: 'column',
             gap: '5px',
             cursor: 'pointer',
-            transition: 'border-color 0.2s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#6c6a62')}
-          onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#3a3936')}
         >
           <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>ผ่อนเดือนนี้</div>
           <div style={{ font: "600 20px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums' }}>
-            {fmt(planMonthly)}
+            <AnimatedNumber value={planMonthly} duration={500} />
           </div>
           <div style={{ font: "400 11px/1.3 'IBM Plex Sans Thai'", color: '#78756e' }}>{planCount} รายการ</div>
         </div>
