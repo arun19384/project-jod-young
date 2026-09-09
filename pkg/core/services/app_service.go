@@ -53,8 +53,8 @@ func (s *AppService) AddTransaction(req domain.AddTransactionRequest) (domain.Tr
 	if req.Tint == "" {
 		req.Tint = "#8a8780"
 	}
-	if req.Account == "" || req.Account == "Main" || req.Account == "เงินสด/บัญชีหลัก" {
-		req.Account = "บัญชีหลัก"
+	if req.Account == "" || req.Account == "Main" || req.Account == "เงินสด/บัญชีหลัก" || req.Account == "บัญชีหลัก" {
+		req.Account = "บัญชีใช้จ่าย"
 	}
 
 	bkkLoc := time.FixedZone("Asia/Bangkok", 7*3600)
@@ -114,8 +114,8 @@ func (s *AppService) UpdateTransaction(id string, req domain.UpdateTransactionRe
 			req.Tint = "#8a8780"
 		}
 	}
-	if req.Account == "" || req.Account == "Main" || req.Account == "เงินสด/บัญชีหลัก" {
-		req.Account = "บัญชีหลัก"
+	if req.Account == "" || req.Account == "Main" || req.Account == "เงินสด/บัญชีหลัก" || req.Account == "บัญชีหลัก" {
+		req.Account = "บัญชีใช้จ่าย"
 	}
 
 	return s.repo.UpdateTransaction(id, req)

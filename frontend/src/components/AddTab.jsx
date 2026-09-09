@@ -14,7 +14,7 @@ export const DEFAULT_CATEGORIES = [
       'ลาเต้', 'อเมริกาโน่', 'starbucks', 'ชาเขียว', 'ชานม', 'kfc', 'mcdonald', 'พิซซ่า',
       'mk', 'บุฟเฟ่ต์', 'ของกิน', 'ไอติม', 'ของหวาน', 'ร้านอาหาร', 'เนื้อย่าง'
     ],
-    acct: 'บัญชีหลัก',
+    acct: 'บัญชีใช้จ่าย',
   },
   {
     id: 'household',
@@ -25,7 +25,7 @@ export const DEFAULT_CATEGORIES = [
       'แฟ้บ', 'ทิชชู่', 'น้ำยาล้างจาน', 'ซุปเปอร์', 'ซื้อของเข้าบ้าน', 'supermarket',
       'วัตสัน', 'watsons', 'ยา', 'ผงซักฟอก', 'ของใช้ในบ้าน', 'น้ำยา'
     ],
-    acct: 'บัญชีหลัก',
+    acct: 'บัญชีใช้จ่าย',
   },
   {
     id: 'shopping',
@@ -36,7 +36,7 @@ export const DEFAULT_CATEGORIES = [
       'เสื้อ', 'กางเกง', 'รองเท้า', 'กระเป๋า', 'หูฟัง', 'uniqlo', 'zara', 'ซื้อของ',
       'shopping', 'ของเล่น', 'เกม', 'เครื่องสำอาง', 'ลิป', 'ครีม'
     ],
-    acct: 'บัญชีหลัก',
+    acct: 'บัญชีใช้จ่าย',
   },
   {
     id: 'fuel',
@@ -46,21 +46,21 @@ export const DEFAULT_CATEGORIES = [
       'น้ำมัน', 'เติมน้ำมัน', 'ปตท', 'ptt', 'บางจาก', 'เชลล์', 'shell', 'caltex',
       'เอสโซ่', 'esso', 'gasoline', 'ดีเซล', 'เบนซิน', 'แก๊สโซฮอล์', 'lpg', 'ngv', 'ชาร์จรถ'
     ],
-    acct: 'บัญชีหลัก',
+    acct: 'บัญชีใช้จ่าย',
   },
   {
     id: 'others',
     cat: 'อื่นๆ',
     tint: '#8a8780',
     kw: ['อื่นๆ', 'จิปาถะ', 'ทั่วไป'],
-    acct: 'บัญชีหลัก',
+    acct: 'บัญชีใช้จ่าย',
   },
   {
     id: 'income',
     cat: 'รายรับ',
     tint: '#6c9a76',
     kw: ['เงินเดือน', 'โบนัส', 'ได้เงิน', 'รับ', 'คืนเงิน', 'ขายของ', 'ถูกหวย', 'income'],
-    acct: 'บัญชีหลัก',
+    acct: 'บัญชีใช้จ่าย',
     income: true,
   },
 ];
@@ -156,8 +156,8 @@ export default function AddTab({
 
   const defaultAccount =
     availableAccounts.find(
-      (a) => a.name === 'บัญชีหลัก' || a.name.includes('บัญชีหลัก')
-    )?.name || 'บัญชีหลัก';
+      (a) => a.name === 'บัญชีใช้จ่าย' || a.name.includes('ใช้จ่าย') || (a.role && a.role.includes('ใช้จ่าย'))
+    )?.name || availableAccounts[0]?.name || 'บัญชีใช้จ่าย';
 
   const handleAddCategory = () => {
     const trimmed = newCatName.trim();
@@ -235,7 +235,7 @@ export default function AddTab({
     let detectedAcct = null;
     if (availableAccounts.length > 0) {
       for (const acc of availableAccounts) {
-        const cleanName = (acc.name === 'เงินสด/บัญชีหลัก' || acc.name === 'Main') ? 'บัญชีหลัก' : acc.name;
+        const cleanName = (acc.name === 'เงินสด/บัญชีหลัก' || acc.name === 'Main' || acc.name === 'บัญชีหลัก') ? 'บัญชีใช้จ่าย' : acc.name;
         const lowName = cleanName.toLowerCase();
         if (words.includes(lowName) || (acc.id && words.includes(acc.id.toLowerCase()))) {
           detectedAcct = cleanName;
@@ -258,7 +258,7 @@ export default function AddTab({
     }
 
     const rawAcct = overrideAcct || detectedAcct || (hit && hit.acct ? hit.acct : defaultAccount);
-    const activeAcct = (rawAcct === 'Main' || rawAcct === 'เงินสด/บัญชีหลัก') ? 'บัญชีหลัก' : rawAcct;
+    const activeAcct = (rawAcct === 'Main' || rawAcct === 'เงินสด/บัญชีหลัก' || rawAcct === 'บัญชีหลัก') ? 'บัญชีใช้จ่าย' : rawAcct;
 
     return {
       amount,
@@ -485,13 +485,13 @@ export default function AddTab({
                     {(() => {
                       const list = availableAccounts.map((a) => {
                         const cleanName =
-                          a.name === 'เงินสด/บัญชีหลัก' || a.name === 'Main'
-                            ? 'บัญชีหลัก'
+                          a.name === 'เงินสด/บัญชีหลัก' || a.name === 'Main' || a.name === 'บัญชีหลัก'
+                            ? 'บัญชีใช้จ่าย'
                             : a.name;
                         return { ...a, cleanName };
                       });
-                      if (!list.some((a) => a.cleanName === 'บัญชีหลัก')) {
-                        list.unshift({ id: 'acct-main', cleanName: 'บัญชีหลัก' });
+                      if (!list.some((a) => a.cleanName === 'บัญชีใช้จ่าย')) {
+                        list.unshift({ id: 'acct-main', cleanName: 'บัญชีใช้จ่าย' });
                       }
                       return list.map((a) => (
                         <option

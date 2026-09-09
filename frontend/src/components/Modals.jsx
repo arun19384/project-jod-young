@@ -683,7 +683,11 @@ export function EditTransactionModal({
   const [category, setCategory] = useState(tx.c || 'อื่นๆ');
   const [tint, setTint] = useState(tx.tint || '#8a8780');
   const [title, setTitle] = useState(tx.t || '');
-  const [account, setAccount] = useState(tx.acct || 'บัญชีหลัก');
+  const [account, setAccount] = useState(
+    (tx.acct === 'บัญชีหลัก' || tx.acct === 'Main' || tx.acct === 'เงินสด/บัญชีหลัก' || !tx.acct)
+      ? 'บัญชีใช้จ่าย'
+      : tx.acct
+  );
   const [customCatInput, setCustomCatInput] = useState('');
   const [showCustomCat, setShowCustomCat] = useState(false);
 
@@ -712,7 +716,10 @@ export function EditTransactionModal({
       return;
     }
     const finalTitle = title.trim() || category || 'ไม่ระบุ';
-    const finalAccount = account.trim() || 'บัญชีหลัก';
+    const finalAccount =
+      (!account.trim() || account.trim() === 'บัญชีหลัก' || account.trim() === 'Main')
+        ? 'บัญชีใช้จ่าย'
+        : account.trim();
 
     onSave(tx.id, {
       t: finalTitle,
@@ -727,11 +734,16 @@ export function EditTransactionModal({
 
   // Combine accounts and cards for selection
   const allWalletOptions = [
-    ...accounts.map((a) => ({ id: a.id, name: a.name, type: 'bank', tint: a.tint || '#6c9a76' })),
+    ...accounts.map((a) => ({
+      id: a.id,
+      name: (a.name === 'บัญชีหลัก' || a.name === 'Main' || a.name === 'เงินสด/บัญชีหลัก') ? 'บัญชีใช้จ่าย' : a.name,
+      type: 'bank',
+      tint: a.tint || '#6c9a76',
+    })),
     ...cards.map((c) => ({ id: c.id, name: c.name, type: 'card', tint: c.tint || '#9b8ec4' })),
   ];
-  if (!allWalletOptions.some((w) => w.name === 'บัญชีหลัก' || w.name === 'Main')) {
-    allWalletOptions.unshift({ id: 'main', name: 'บัญชีหลัก', type: 'bank', tint: '#6c9a76' });
+  if (!allWalletOptions.some((w) => w.name === 'บัญชีใช้จ่าย')) {
+    allWalletOptions.unshift({ id: 'main', name: 'บัญชีใช้จ่าย', type: 'bank', tint: '#6c9a76' });
   }
 
   return (
@@ -1502,7 +1514,7 @@ export function WalletTransactionsModal({
   const [previewReceipt, setPreviewReceipt] = useState(null);
 
   const isCard = !!(wallet.isCard || wallet.cut || wallet.due || (wallet.role && wallet.role.includes('บัตร')));
-  const walletName = (wallet.name === 'เงินสด/บัญชีหลัก' || wallet.name === 'Main') ? 'บัญชีหลัก' : wallet.name;
+  const walletName = (wallet.name === 'เงินสด/บัญชีหลัก' || wallet.name === 'Main' || wallet.name === 'บัญชีหลัก') ? 'บัญชีใช้จ่าย' : wallet.name;
   const targetName = walletName.toLowerCase();
   const targetId = (wallet.id || '').toLowerCase();
 
@@ -1528,7 +1540,7 @@ export function WalletTransactionsModal({
     if (!tx.acct) return false;
     const acct = tx.acct.trim().toLowerCase();
     if (acct === targetName || acct === targetId) return true;
-    if (targetName === 'บัญชีหลัก' && (acct === 'main' || acct === 'เงินสด/บัญชีหลัก')) return true;
+    if ((targetName === 'บัญชีใช้จ่าย' || targetName === 'บัญชีหลัก') && (acct === 'บัญชีใช้จ่าย' || acct === 'บัญชีหลัก' || acct === 'main' || acct === 'เงินสด/บัญชีหลัก')) return true;
     if (isCard) {
       if (acct.includes(targetName) || targetName.includes(acct)) return true;
       if (targetId && (acct === `บัตร ${targetId}` || acct === `บัตร${targetId}`)) return true;
@@ -1635,7 +1647,7 @@ export function WalletTransactionsModal({
                 fontSize: '16px',
               }}
             >
-              {isCard ? '💳' : (walletName === 'บัญชีหลัก' ? '💰' : '🏦')}
+              {isCard ? '💳' : (walletName === 'บัญชีใช้จ่าย' || walletName === 'บัญชีหลัก' ? '💰' : '🏦')}
             </span>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

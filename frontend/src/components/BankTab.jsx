@@ -125,7 +125,7 @@ export default function BankTab({
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ font: "500 14px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
-                    {b.name === 'เงินสด/บัญชีหลัก' || b.name === 'Main' ? 'บัญชีหลัก' : b.name}
+                    {b.name === 'เงินสด/บัญชีหลัก' || b.name === 'Main' || b.name === 'บัญชีหลัก' ? 'บัญชีใช้จ่าย' : b.name}
                   </span>
                   <span style={{ fontSize: '10px', color: '#d97757', background: 'rgba(217,119,87,0.12)', padding: '1px 5px', borderRadius: '4px' }}>
                     📄 ดูรายการ

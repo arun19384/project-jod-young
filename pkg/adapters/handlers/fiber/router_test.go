@@ -106,7 +106,7 @@ func TestHexagonalFiberAPI(t *testing.T) {
 		Category: "อาหาร",
 		Tint:     "#d97757",
 		Amount:   150,
-		Account:  "บัญชีหลัก",
+		Account:  "บัญชีใช้จ่าย",
 		IsIncome: false,
 	}
 	upBytes, _ := json.Marshal(updatePayload)

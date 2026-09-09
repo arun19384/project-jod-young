@@ -53,7 +53,7 @@ export default function HomeTab({
     ...accounts.map((a) => ({
       ...a,
       id: a.id,
-      name: (a.name === 'เงินสด/บัญชีหลัก' || a.name === 'Main') ? 'บัญชีหลัก' : a.name,
+      name: (a.name === 'เงินสด/บัญชีหลัก' || a.name === 'Main' || a.name === 'บัญชีหลัก') ? 'บัญชีใช้จ่าย' : a.name,
       role: a.role || 'เงินเดือน/ใช้จ่าย',
       amt: a.amt || 0,
       tint: a.tint || '#6c9a76',
@@ -72,11 +72,11 @@ export default function HomeTab({
 
   // Primary spending account (บัญชีใช้จ่าย)
   const spendingAccount = accounts.find(
-    (a) => a.name === 'บัญชีหลัก' || a.name === 'Main' || a.name === 'เงินสด/บัญชีหลัก' || (a.role && a.role.includes('ใช้จ่าย'))
+    (a) => a.name === 'บัญชีใช้จ่าย' || (a.role && a.role.includes('ใช้จ่าย')) || a.name === 'บัญชีหลัก' || a.name === 'Main' || a.name === 'เงินสด/บัญชีหลัก'
   ) || accounts[0];
-  const spendingAccountName = (spendingAccount?.name === 'เงินสด/บัญชีหลัก' || spendingAccount?.name === 'Main')
-    ? 'บัญชีหลัก'
-    : (spendingAccount?.name || 'บัญชีหลัก');
+  const spendingAccountName = (spendingAccount?.name === 'เงินสด/บัญชีหลัก' || spendingAccount?.name === 'Main' || spendingAccount?.name === 'บัญชีหลัก')
+    ? 'บัญชีใช้จ่าย'
+    : (spendingAccount?.name || 'บัญชีใช้จ่าย');
   const spendingBalance = spendingAccount ? (spendingAccount.amt || 0) : left;
 
   // Selected wallets filter state (stored in localStorage)
@@ -186,7 +186,8 @@ export default function HomeTab({
         if (!tx.acct) return false;
         const acct = tx.acct.trim();
         return selectedIdentifiers.has(acct) ||
-          (selectedIdentifiers.has('บัญชีหลัก') && (acct.toLowerCase() === 'main' || acct === 'เงินสด/บัญชีหลัก'));
+          ((selectedIdentifiers.has('บัญชีใช้จ่าย') || selectedIdentifiers.has('บัญชีหลัก')) &&
+            (acct === 'บัญชีใช้จ่าย' || acct === 'บัญชีหลัก' || acct.toLowerCase() === 'main' || acct === 'เงินสด/บัญชีหลัก'));
       });
 
   // Calculate upcoming due bills and credit cards within 7 days

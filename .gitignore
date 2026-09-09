@@ -43,3 +43,7 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Test artifacts
+**/handlers/fiber/data/
+

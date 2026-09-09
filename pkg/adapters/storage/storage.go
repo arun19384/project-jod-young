@@ -249,8 +249,8 @@ func (r *StorageRepository) initSchema() error {
 	}
 
 	_, _ = r.sqlDB.Exec("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS receipt_image MEDIUMTEXT")
-	_, _ = r.sqlDB.Exec("UPDATE accounts SET name = 'บัญชีหลัก' WHERE name = 'เงินสด/บัญชีหลัก' OR id = 'acct-main'")
-	_, _ = r.sqlDB.Exec("UPDATE transactions SET account = 'บัญชีหลัก' WHERE account = 'เงินสด/บัญชีหลัก'")
+	_, _ = r.sqlDB.Exec("UPDATE accounts SET name = 'บัญชีใช้จ่าย' WHERE name = 'เงินสด/บัญชีหลัก' OR name = 'บัญชีหลัก' OR id = 'acct-main'")
+	_, _ = r.sqlDB.Exec("UPDATE transactions SET account = 'บัญชีใช้จ่าย' WHERE account = 'เงินสด/บัญชีหลัก' OR account = 'บัญชีหลัก'")
 
 	r.seedIfEmpty()
 	return nil
