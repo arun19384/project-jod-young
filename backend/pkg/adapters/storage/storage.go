@@ -248,6 +248,7 @@ func (r *StorageRepository) initSchema() error {
 		}
 	}
 
+	_, _ = r.sqlDB.Exec("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS receipt_image MEDIUMTEXT")
 	_, _ = r.sqlDB.Exec("UPDATE accounts SET name = 'บัญชีหลัก' WHERE name = 'เงินสด/บัญชีหลัก' OR id = 'acct-main'")
 	_, _ = r.sqlDB.Exec("UPDATE transactions SET account = 'บัญชีหลัก' WHERE account = 'เงินสด/บัญชีหลัก'")
 
@@ -472,6 +473,17 @@ func (r *StorageRepository) GetTransactions() []domain.Transaction {
 	list := make([]domain.Transaction, 0)
 	rows, err := r.sqlDB.Query("SELECT id, title, category, category_tint, amount, account, date, when_text, is_income, is_today, COALESCE(receipt_image, '') FROM transactions ORDER BY created_at DESC")
 	if err != nil {
+		rows, err = r.sqlDB.Query("SELECT id, title, category, category_tint, amount, account, date, when_text, is_income, is_today FROM transactions ORDER BY created_at DESC")
+		if err != nil {
+			return list
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var tx domain.Transaction
+			if err := rows.Scan(&tx.ID, &tx.Title, &tx.Category, &tx.CategoryTint, &tx.Amount, &tx.Account, &tx.Date, &tx.When, &tx.IsIncome, &tx.IsToday); err == nil {
+				list = append(list, tx)
+			}
+		}
 		return list
 	}
 	defer rows.Close()

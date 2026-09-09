@@ -1293,6 +1293,9 @@ export function WalletTransactionsModal({
         const cardLetter = walletName.replace('บัตร', '').trim().toLowerCase();
         if (cardLetter && acct.includes(cardLetter)) return true;
       }
+      // Match parts of card name (e.g. "ktc" or "ใส")
+      const nameParts = targetName.split(/\s+/).filter((p) => p.length > 1);
+      if (nameParts.length > 0 && nameParts.some((p) => acct.includes(p))) return true;
     }
     return false;
   });
@@ -1307,6 +1310,26 @@ export function WalletTransactionsModal({
       walletTxs.push(cline);
     }
   });
+
+  // 4. If card has an initial balance set during card creation that exceeds recorded transactions
+  const recordedOut = walletTxs.filter((t) => !t.income).reduce((sum, t) => sum + (t.a || 0), 0);
+  const cardInitialAmt = Math.abs(wallet.amt || 0);
+  const diff = cardInitialAmt - recordedOut;
+  if (isCard && diff > 0.01) {
+    walletTxs.push({
+      id: `initial-card-${wallet.id || 'c'}`,
+      t: 'ยอดยกมา / ยอดค้างชำระเริ่มต้นของบัตร',
+      c: 'ยอดยกมา',
+      a: Math.round(diff * 100) / 100,
+      acct: walletName,
+      date: wallet.due || 'รอบก่อนหน้า',
+      when: 'ยอดยกมาก่อนเริ่มจด',
+      income: false,
+      tint: '#9b8ec4',
+      isStatementLine: true,
+      mark: '📌',
+    });
+  }
 
   // Stats calculation
   const totalIn = walletTxs.filter((t) => t.income).reduce((sum, t) => sum + (t.a || 0), 0);
