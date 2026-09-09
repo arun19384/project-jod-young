@@ -4,6 +4,7 @@ import (
 	"ai-in-my-area-backend/internal/core/domain"
 	"ai-in-my-area-backend/internal/core/ports"
 	"errors"
+	"time"
 )
 
 type AppService struct {
@@ -56,13 +57,29 @@ func (s *AppService) AddTransaction(req domain.AddTransactionRequest) (domain.Tr
 		req.Account = "บัญชีหลัก"
 	}
 
+	bkkLoc := time.FixedZone("Asia/Bangkok", 7*3600)
+	nowBkk := time.Now().In(bkkLoc)
+
+	dateStr := req.Date
+	if dateStr == "" {
+		dateStr = nowBkk.Format("02 Jan")
+	}
+
+	whenStr := req.When
+	if whenStr == "" {
+		whenStr = "วันนี้ · " + nowBkk.Format("15:04 น.")
+	}
+
 	tx := domain.Transaction{
 		Title:        req.Name,
 		Category:     req.Category,
 		CategoryTint: req.Tint,
 		Amount:       req.Amount,
 		Account:      req.Account,
+		Date:         dateStr,
+		When:         whenStr,
 		IsIncome:     req.IsIncome,
+		IsToday:      true,
 		ReceiptImage: req.Receipt,
 	}
 

@@ -15,7 +15,7 @@ func NewFiberRouter(appUseCase ports.AppUseCase, parserUseCase ports.ParserUseCa
 	}
 
 	app := fiber.New(fiber.Config{
-		AppName:   "จดเงิน (Jod Ngen) - Hexagonal Fiber API",
+		AppName:   "จดยัง (Jod Yang) - Hexagonal Fiber API",
 		BodyLimit: 15 * 1024 * 1024, // 15MB for receipts and images
 	})
 

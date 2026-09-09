@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import AnimatedNumber from './AnimatedNumber.jsx';
 import AnalyticsChart from './AnalyticsChart.jsx';
-import { ReceiptPreviewModal } from './Modals.jsx';
+import { ReceiptPreviewModal, WalletTransactionsModal } from './Modals.jsx';
 import { getDaysUntilDue } from './BankTab.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
@@ -17,8 +17,11 @@ export default function HomeTab({
   onDeleteTransaction,
   onSelectTab,
   onOpenSearch,
+  onEditAccount,
+  onOpenTransferModal,
 }) {
   const [previewReceipt, setPreviewReceipt] = useState(null);
+  const [selectedWalletModal, setSelectedWalletModal] = useState(null);
   if (!summary) {
     return (
       <div style={{ padding: '40px 22px', textAlign: 'center', color: '#8a8780' }}>
@@ -62,6 +65,15 @@ export default function HomeTab({
       isCard: true,
     })),
   ];
+
+  // Primary spending account (บัญชีใช้จ่าย)
+  const spendingAccount = accounts.find(
+    (a) => a.name === 'บัญชีหลัก' || a.name === 'Main' || a.name === 'เงินสด/บัญชีหลัก' || (a.role && a.role.includes('ใช้จ่าย'))
+  ) || accounts[0];
+  const spendingAccountName = (spendingAccount?.name === 'เงินสด/บัญชีหลัก' || spendingAccount?.name === 'Main')
+    ? 'บัญชีหลัก'
+    : (spendingAccount?.name || 'บัญชีหลัก');
+  const spendingBalance = spendingAccount ? (spendingAccount.amt || 0) : left;
 
   // Selected wallets filter state (stored in localStorage)
   const [selectedWallets, setSelectedWallets] = useState(() => {
@@ -166,9 +178,11 @@ export default function HomeTab({
 
   const filteredRecent = isAllSelected
     ? recent
-    : recent.filter((tx) => {
+    : transactions.filter((tx) => {
         if (!tx.acct) return false;
-        return selectedIdentifiers.has(tx.acct);
+        const acct = tx.acct.trim();
+        return selectedIdentifiers.has(acct) ||
+          (selectedIdentifiers.has('บัญชีหลัก') && (acct.toLowerCase() === 'main' || acct === 'เงินสด/บัญชีหลัก'));
       });
 
   // Calculate upcoming due bills and credit cards within 7 days
@@ -219,7 +233,7 @@ export default function HomeTab({
         <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
           <img
             src="/app-logo.png"
-            alt="จดเงิน"
+            alt="จดยัง"
             style={{
               width: '38px',
               height: '38px',
@@ -283,27 +297,82 @@ export default function HomeTab({
         </div>
       )}
 
-      {/* Remaining Budget & Bar (Click to edit budget) */}
+      {/* Primary Spending Account & Monthly Budget Card */}
       <div
-        className="pressable"
-        style={{ display: 'flex', flexDirection: 'column', gap: '14px', cursor: 'pointer' }}
-        onClick={onOpenEditBudget}
-        title="แตะเพื่อแก้ไขงบประมาณ/เงินเดือน"
+        style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ font: "400 12px/1.4 'IBM Plex Sans Thai'", color: '#8a8780' }}>เหลือใช้ (แตะเพื่อตั้งงบ)</span>
-            <span style={{ fontSize: '10px', color: '#d97757' }}>✎ แก้ไข</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+            <div
+              onClick={() => {
+                if (spendingAccount) {
+                  setSelectedWalletModal(spendingAccount);
+                }
+              }}
+              className="pressable"
+              style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer' }}
+              title="แตะเพื่อดูประวัติรายการในบัญชีนี้"
+            >
+              <span
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: spendingAccount?.tint || '#d97757',
+                  boxShadow: `0 0 8px ${spendingAccount?.tint || '#d97757'}88`,
+                }}
+              />
+              <span style={{ font: "600 13.5px/1.4 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
+                บัญชีใช้จ่าย ({spendingAccountName})
+              </span>
+              <span style={{ fontSize: '10.5px', color: '#d97757', background: 'rgba(217,119,87,0.14)', padding: '2px 6px', borderRadius: '5px' }}>
+                📄 ดูประวัติ
+              </span>
+            </div>
+            {onOpenEditBudget && (
+              <button
+                onClick={onOpenEditBudget}
+                className="pressable"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #45433c',
+                  borderRadius: '6px',
+                  padding: '2px 7px',
+                  fontSize: '11px',
+                  color: '#a8a49a',
+                  cursor: 'pointer',
+                }}
+                title="ตั้งงบประมาณรายเดือน"
+              >
+                ✎ ตั้งงบ
+              </button>
+            )}
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px' }}>
+
+          <div
+            onClick={() => {
+              if (spendingAccount) {
+                setSelectedWalletModal(spendingAccount);
+              }
+            }}
+            className="pressable"
+            style={{ display: 'flex', alignItems: 'baseline', gap: '7px', cursor: 'pointer' }}
+            title="แตะเพื่อดูประวัติรายการในบัญชีใช้จ่าย"
+          >
             <div style={{ font: "600 46px/1 'IBM Plex Sans Thai'", color: '#f0eee6', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-              <AnimatedNumber value={left} duration={220} />
+              <AnimatedNumber value={spendingBalance} duration={220} />
             </div>
             <div style={{ font: "400 15px/1 'IBM Plex Sans Thai'", color: '#78756e' }}>บาท</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {/* Monthly Budget Spending Progress Bar */}
+        <div
+          onClick={onOpenEditBudget}
+          className="pressable"
+          style={{ display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }}
+          title="แตะเพื่อตั้งงบประมาณรายเดือน"
+        >
           <div style={{ height: '8px', borderRadius: '99px', background: '#33322f', overflow: 'hidden', display: 'flex' }}>
             <div
               className="animate-shimmer"
@@ -318,9 +387,11 @@ export default function HomeTab({
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', font: "400 12px/1.4 'IBM Plex Sans Thai'", color: '#8a8780' }}>
             <span>
-              ใช้ไป <span style={{ color: '#d0cdc2', fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={spent} duration={200} /></span>
+              ใช้ไปแล้ว {spentPct}% (<span style={{ color: '#d0cdc2', fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={spent} duration={200} /></span> บ.)
             </span>
-            <span style={{ fontVariantNumeric: 'tabular-nums' }}>รับ <AnimatedNumber value={income} duration={200} /></span>
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+              งบเดือนนี้ {fmt(income)} บ. (เหลือ {fmt(left)} บ.)
+            </span>
           </div>
         </div>
       </div>
@@ -498,8 +569,9 @@ export default function HomeTab({
             {visibleWallets.slice(0, 4).map((w) => (
               <div
                 key={w.id}
-                onClick={() => onSelectTab && onSelectTab('bank')}
+                onClick={() => setSelectedWalletModal(w)}
                 className="pressable"
+                title="แตะเพื่อดูประวัติรายการในกระเป๋านี้"
                 style={{
                   background: '#242321',
                   border: '1px solid #373630',
@@ -526,10 +598,12 @@ export default function HomeTab({
                   >
                     {w.name}
                   </span>
-                  {w.isCard && (
+                  {w.isCard ? (
                     <span style={{ fontSize: '9px', color: '#9b8ec4', background: 'rgba(155,142,196,0.15)', padding: '1px 4px', borderRadius: '4px' }}>
                       บัตร
                     </span>
+                  ) : (
+                    <span style={{ fontSize: '9.5px', color: '#d97757' }}>📄 ดูรายการ</span>
                   )}
                 </div>
                 <div style={{ font: "600 15px/1.2 'IBM Plex Sans Thai'", color: w.amt < 0 ? '#d97757' : '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>
@@ -909,6 +983,18 @@ export default function HomeTab({
         <ReceiptPreviewModal
           src={previewReceipt}
           onClose={() => setPreviewReceipt(null)}
+        />
+      )}
+
+      {/* Wallet Transactions Detail Modal */}
+      {selectedWalletModal && (
+        <WalletTransactionsModal
+          wallet={selectedWalletModal}
+          transactions={transactions}
+          onClose={() => setSelectedWalletModal(null)}
+          onDeleteTransaction={onDeleteTransaction}
+          onEditAccount={onEditAccount}
+          onOpenTransferModal={onOpenTransferModal}
         />
       )}
     </div>

@@ -143,6 +143,8 @@ type AddTransactionRequest struct {
 	Tint     string  `json:"tint"`
 	Amount   float64 `json:"a"`
 	Account  string  `json:"acct"`
+	Date     string  `json:"date"`
+	When     string  `json:"when"`
 	IsIncome bool    `json:"income"`
 	Kind     string  `json:"kind"`
 	Receipt  string  `json:"receipt"`

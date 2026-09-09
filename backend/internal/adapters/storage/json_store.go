@@ -192,8 +192,11 @@ func (s *JSONFileStore) AddTransaction(tx domain.Transaction) domain.Transaction
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	now := time.Now()
-	tx.ID = fmt.Sprintf("tx-%d", now.UnixNano())
+	bkkLoc := time.FixedZone("Asia/Bangkok", 7*3600)
+	now := time.Now().In(bkkLoc)
+	if tx.ID == "" {
+		tx.ID = fmt.Sprintf("tx-%d", now.UnixNano())
+	}
 	if tx.Date == "" {
 		tx.Date = now.Format("02 Jan")
 	}
@@ -402,15 +405,17 @@ func (s *JSONFileStore) TransferAccount(fromID, toID string, amount float64, not
 	s.db.Accounts[toIdx].Amount += amount
 
 	// Log transaction record
+	bkkLoc := time.FixedZone("Asia/Bangkok", 7*3600)
+	nowBkk := time.Now().In(bkkLoc)
 	tx := domain.Transaction{
-		ID:           fmt.Sprintf("tx-%d", time.Now().UnixNano()),
+		ID:           fmt.Sprintf("tx-%d", nowBkk.UnixNano()),
 		Title:        fmt.Sprintf("โอนไป %s", s.db.Accounts[toIdx].Name),
 		Category:     "โอนเงิน",
 		CategoryTint: "#7fa3c9",
 		Amount:       amount,
 		Account:      s.db.Accounts[fromIdx].Name,
-		Date:         time.Now().Format("02 Jan"),
-		When:         "วันนี้ · " + time.Now().Format("15:04 น."),
+		Date:         nowBkk.Format("02 Jan"),
+		When:         "วันนี้ · " + nowBkk.Format("15:04 น."),
 		IsIncome:     false,
 		IsToday:      true,
 	}

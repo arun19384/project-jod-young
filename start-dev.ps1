@@ -1,4 +1,4 @@
-# สคริปต์รันระบบ 'จดเงิน' (Full-Stack React + Golang)
+# สคริปต์รันระบบ 'จดยัง' (Full-Stack React + Golang)
 $ErrorActionPreference = "Stop"
 
 # ตั้งค่า PATH ให้มองเห็น Go และ Node.js
@@ -7,7 +7,7 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";"
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 Write-Host "==========================================================" -ForegroundColor DarkCyan
-Write-Host "       เริ่มต้นรันแอปพลิเคชัน 'จดเงิน' (FE + BE)           " -ForegroundColor Green
+Write-Host "       เริ่มต้นรันแอปพลิเคชัน 'จดยัง' (FE + BE)           " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor DarkCyan
 
 # สตาร์ต Backend (Golang Hexagonal Fiber) บนพอร์ต 8080

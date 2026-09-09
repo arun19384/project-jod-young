@@ -14,7 +14,7 @@ func main() {
 	}
 
 	fmt.Printf("=========================================\n")
-	fmt.Printf(" 'จดเงิน' Hexagonal Architecture (Fiber + Viper)\n")
+	fmt.Printf(" 'จดยัง' Hexagonal Architecture (Fiber + Viper)\n")
 	fmt.Printf(" Listening on http://localhost:%s\n", port)
 	fmt.Printf("=========================================\n")
 

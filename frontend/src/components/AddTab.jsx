@@ -247,6 +247,12 @@ export default function AddTab({
 
   const handleSave = () => {
     if (!parsed.amount) return;
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const whenText = `วันนี้ · ${hours}:${minutes} น.`;
+    const dateText = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
     onAddTransaction({
       text: draft,
       t: parsed.name,
@@ -256,6 +262,8 @@ export default function AddTab({
       acct: parsed.acct,
       income: parsed.income,
       receipt: receiptImage,
+      date: dateText,
+      when: whenText,
     });
     setDraft('');
     setReceiptImage(null);

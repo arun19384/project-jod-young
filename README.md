@@ -1,4 +1,4 @@
-# จดเงิน (Jod Ngen) - Full-Stack App (Frontend: React, Backend: Golang)
+# จดยัง (Jod Yang) - Full-Stack App (Frontend: React, Backend: Golang)
 
 แอปพลิเคชันจัดการการเงินส่วนบุคคลสไตล์ Dark Minimalist **"พิมพ์ประโยคเดียว ระบบแยกหมวดให้อัตโนมัติ"** พร้อมระบบติดตามยอดคงเหลือ, รายการผ่อนชำระ, บัตรเครดิต, ค่าใช้จ่ายคงที่รายเดือน และการติดตามหนี้สิน/เงินที่ออกให้ก่อน
 

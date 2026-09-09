@@ -91,7 +91,7 @@ export default function LockScreen({ expectedPin, onUnlock }) {
             ป้อนรหัส PIN 4 หลัก
           </div>
           <div style={{ font: "400 13px/1.4 'IBM Plex Sans Thai'", color: '#8a8780', marginTop: '4px' }}>
-            ปลดล็อคเพื่อเข้าสู่ จดเงิน
+            ปลดล็อคเพื่อเข้าสู่ จดยัง
           </div>
         </div>
 

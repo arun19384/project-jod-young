@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import AnimatedNumber from './AnimatedNumber.jsx';
+import { WalletTransactionsModal } from './Modals.jsx';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -26,11 +27,13 @@ export function getDaysUntilDue(dayString) {
 
 export default function BankTab({
   data,
+  transactions = [],
   onToggleFixed,
   onDeleteFixed,
   onDeleteAccount,
   onDeleteCard,
   onEditAccount,
+  onDeleteTransaction,
   onOpenAddAccount,
   onOpenTransferModal,
   onOpenAddCard,
@@ -38,6 +41,7 @@ export default function BankTab({
   onOpenPayCard,
 }) {
   const [openCard, setOpenCard] = useState(null);
+  const [selectedWalletModal, setSelectedWalletModal] = useState(null);
 
   const accounts = data?.accounts || [];
   const cards = data?.cards || [];
@@ -102,9 +106,9 @@ export default function BankTab({
           accounts.map((b) => (
             <div
               key={b.id}
-              onClick={() => onEditAccount && onEditAccount(b)}
+              onClick={() => setSelectedWalletModal(b)}
               className="pressable"
-              title="แตะเพื่อแก้ไขยอดเงินหรือข้อมูลบัญชี"
+              title="แตะเพื่อดูประวัติรายการในบัญชีนี้"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -122,7 +126,9 @@ export default function BankTab({
                   <span style={{ font: "500 14px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
                     {b.name === 'เงินสด/บัญชีหลัก' || b.name === 'Main' ? 'บัญชีหลัก' : b.name}
                   </span>
-                  <span style={{ fontSize: '10.5px', color: '#d97757' }}>✎</span>
+                  <span style={{ fontSize: '10px', color: '#d97757', background: 'rgba(217,119,87,0.12)', padding: '1px 5px', borderRadius: '4px' }}>
+                    📄 ดูรายการ
+                  </span>
                 </div>
                 <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780' }}>{b.role}</div>
               </div>
@@ -130,7 +136,25 @@ export default function BankTab({
                 <div style={{ font: "600 16px/1 'IBM Plex Sans Thai'", color: '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>
                   <AnimatedNumber value={b.amt} duration={200} />
                 </div>
-                <span style={{ fontSize: '9px', color: '#78756e' }}>แตะเพื่อแก้</span>
+                {onEditAccount && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditAccount(b);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      fontSize: '10px',
+                      color: '#d97757',
+                      cursor: 'pointer',
+                      padding: '0',
+                    }}
+                    title="แก้ไขยอดเงิน"
+                  >
+                    ✎ ปรับยอด
+                  </button>
+                )}
               </div>
               {onDeleteAccount && accounts.length > 1 && (
                 <button
@@ -276,6 +300,24 @@ export default function BankTab({
                       }}
                     >
                       {isOpen ? 'ปิด' : c.pdfLabel || 'แนบ PDF เทียบยอด'}
+                    </button>
+                    <button
+                      onClick={() => setSelectedWalletModal({ id: c.id, name: c.name, amt: -(c.amt || 0), tint: c.tint, isCard: true, role: 'บัตรเครดิต' })}
+                      className="pressable"
+                      style={{
+                        flex: 'none',
+                        border: '1px solid #45433c',
+                        background: 'transparent',
+                        borderRadius: '11px',
+                        padding: '11px 13px',
+                        color: '#d0cdc2',
+                        font: "500 12px/1 'IBM Plex Sans Thai'",
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                      title="ดูประวัติรายการที่รูดผ่านบัตรนี้"
+                    >
+                      📄 ดูรายการ
                     </button>
                     <button
                       onClick={() => onOpenPayCard && onOpenPayCard(c)}
@@ -513,6 +555,18 @@ export default function BankTab({
           )}
         </div>
       </div>
+
+      {/* Wallet Transactions Detail Modal */}
+      {selectedWalletModal && (
+        <WalletTransactionsModal
+          wallet={selectedWalletModal}
+          transactions={transactions}
+          onClose={() => setSelectedWalletModal(null)}
+          onDeleteTransaction={onDeleteTransaction}
+          onEditAccount={onEditAccount}
+          onOpenTransferModal={onOpenTransferModal}
+        />
+      )}
     </div>
   );
 }

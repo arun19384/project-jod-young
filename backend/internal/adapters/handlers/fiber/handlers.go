@@ -23,7 +23,7 @@ func (h *FiberHandler) HealthCheck(c *fiber.Ctx) error {
 	status := h.appUseCase.GetDBStatus()
 	return c.JSON(fiber.Map{
 		"status": "ok",
-		"app":    "จดเงิน",
+		"app":    "จดยัง",
 		"db":     status,
 	})
 }

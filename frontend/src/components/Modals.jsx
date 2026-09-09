@@ -1242,3 +1242,417 @@ export function ReceiptPreviewModal({ src, title, onClose }) {
     </div>
   );
 }
+
+export function WalletTransactionsModal({
+  wallet,
+  transactions = [],
+  onClose,
+  onDeleteTransaction,
+  onEditAccount,
+  onOpenTransferModal,
+}) {
+  if (!wallet) return null;
+
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('ALL'); // ALL, OUT, IN
+  const [previewReceipt, setPreviewReceipt] = useState(null);
+
+  const walletName = (wallet.name === 'เงินสด/บัญชีหลัก' || wallet.name === 'Main') ? 'บัญชีหลัก' : wallet.name;
+
+  // Filter transactions matching this wallet
+  const walletTxs = transactions.filter((tx) => {
+    if (!tx.acct) return false;
+    const acct = tx.acct.trim().toLowerCase();
+    const targetName = walletName.toLowerCase();
+    const targetId = (wallet.id || '').toLowerCase();
+    return acct === targetName || acct === targetId ||
+      (targetName === 'บัญชีหลัก' && (acct === 'main' || acct === 'เงินสด/บัญชีหลัก'));
+  });
+
+  const totalIn = walletTxs.filter((t) => t.income).reduce((sum, t) => sum + (t.a || 0), 0);
+  const totalOut = walletTxs.filter((t) => !t.income).reduce((sum, t) => sum + (t.a || 0), 0);
+
+  const filtered = walletTxs.filter((tx) => {
+    if (filterType === 'IN' && !tx.income) return false;
+    if (filterType === 'OUT' && tx.income) return false;
+    if (!search.trim()) return true;
+    const q = search.trim().toLowerCase();
+    return (
+      (tx.t && tx.t.toLowerCase().includes(q)) ||
+      (tx.c && tx.c.toLowerCase().includes(q)) ||
+      (tx.when && tx.when.toLowerCase().includes(q))
+    );
+  });
+
+  const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
+
+  return (
+    <div style={modalOverlayStyle} onClick={onClose}>
+      <div
+        className="animate-spring-up"
+        style={{
+          ...modalBoxStyle,
+          maxWidth: '460px',
+          maxHeight: '85vh',
+          padding: '0',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div
+          style={{
+            padding: '16px 20px',
+            borderBottom: '1px solid #33322e',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: '#232220',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span
+              style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
+                background: wallet.tint || '#d97757',
+                boxShadow: `0 0 10px ${wallet.tint || '#d97757'}88`,
+              }}
+            />
+            <div>
+              <div style={{ font: "600 15.5px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
+                {walletName}
+              </div>
+              <div style={{ font: "400 11.5px/1.2 'IBM Plex Sans Thai'", color: '#8a8780' }}>
+                {wallet.role || (wallet.isCard ? 'บัตรเครดิต' : 'บัญชี')}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: '#353430',
+              border: 'none',
+              borderRadius: '99px',
+              width: '28px',
+              height: '28px',
+              color: '#a8a49a',
+              cursor: 'pointer',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Wallet Balance Summary Card */}
+          <div
+            style={{
+              background: 'linear-gradient(145deg, #2b2a27 0%, #1e1d1b 100%)',
+              border: '1px solid #3d3b36',
+              borderRadius: '16px',
+              padding: '16px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <span style={{ font: "400 11.5px/1 'IBM Plex Sans Thai'", color: '#8a8780' }}>ยอดคงเหลือในกระเป๋า</span>
+                <div style={{ font: "600 28px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums', marginTop: '4px' }}>
+                  {fmt(wallet.amt)} <span style={{ fontSize: '14px', fontWeight: '400', color: '#78756e' }}>บาท</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {onEditAccount && !wallet.isCard && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onEditAccount(wallet);
+                    }}
+                    className="pressable"
+                    style={{
+                      background: 'rgba(217,119,87,0.15)',
+                      border: '1px solid rgba(217,119,87,0.35)',
+                      borderRadius: '8px',
+                      padding: '5px 9px',
+                      fontSize: '11px',
+                      color: '#d97757',
+                      cursor: 'pointer',
+                    }}
+                    title="แก้ไขยอดเงิน"
+                  >
+                    ✎ ปรับยอด
+                  </button>
+                )}
+                {onOpenTransferModal && !wallet.isCard && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onOpenTransferModal();
+                    }}
+                    className="pressable"
+                    style={{
+                      background: '#353430',
+                      border: '1px solid #45433c',
+                      borderRadius: '8px',
+                      padding: '5px 9px',
+                      fontSize: '11px',
+                      color: '#d0cdc2',
+                      cursor: 'pointer',
+                    }}
+                    title="โอนเงินไปบัญชีอื่น"
+                  >
+                    🔁 โอน
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Income & Expense Breakdown for this Wallet */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '8px',
+                paddingTop: '10px',
+                borderTop: '1px solid #383733',
+              }}
+            >
+              <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
+                <span style={{ fontSize: '10.5px', color: '#6c9a76' }}>⬇ เงินเข้าทั้งหมด</span>
+                <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#6c9a76', marginTop: '2px' }}>
+                  +{fmt(totalIn)} บ.
+                </div>
+              </div>
+              <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
+                <span style={{ fontSize: '10.5px', color: '#d97757' }}>⬆ เงินออกทั้งหมด</span>
+                <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#d97757', marginTop: '2px' }}>
+                  -{fmt(totalOut)} บ.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="🔍 ค้นหารายการในกระเป๋านี้..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                ...inputStyle,
+                padding: '8px 12px',
+                fontSize: '12.5px',
+                borderRadius: '10px',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button
+                onClick={() => setFilterType('ALL')}
+                style={{
+                  background: filterType === 'ALL' ? '#3e3d38' : '#2b2a27',
+                  border: `1px solid ${filterType === 'ALL' ? '#d97757' : '#383733'}`,
+                  color: filterType === 'ALL' ? '#f0eee6' : '#8a8780',
+                  borderRadius: '8px',
+                  padding: '6px 8px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                }}
+              >
+                ทั้งหมด
+              </button>
+              <button
+                onClick={() => setFilterType('OUT')}
+                style={{
+                  background: filterType === 'OUT' ? 'rgba(217,119,87,0.2)' : '#2b2a27',
+                  border: `1px solid ${filterType === 'OUT' ? '#d97757' : '#383733'}`,
+                  color: filterType === 'OUT' ? '#d97757' : '#8a8780',
+                  borderRadius: '8px',
+                  padding: '6px 8px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                }}
+              >
+                จ่าย
+              </button>
+              <button
+                onClick={() => setFilterType('IN')}
+                style={{
+                  background: filterType === 'IN' ? 'rgba(108,154,118,0.2)' : '#2b2a27',
+                  border: `1px solid ${filterType === 'IN' ? '#6c9a76' : '#383733'}`,
+                  color: filterType === 'IN' ? '#6c9a76' : '#8a8780',
+                  borderRadius: '8px',
+                  padding: '6px 8px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                }}
+              >
+                รับ
+              </button>
+            </div>
+          </div>
+
+          {/* Transactions List */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ font: "600 12.5px 'IBM Plex Sans Thai'", color: '#a8a49a' }}>
+                ประวัติรายการ ({filtered.length} รายการ)
+              </span>
+              {search && (
+                <span style={{ fontSize: '11px', color: '#78756e' }}>
+                  ค้นหา "{search}"
+                </span>
+              )}
+            </div>
+
+            {filtered.length === 0 ? (
+              <div
+                style={{
+                  padding: '32px 16px',
+                  textAlign: 'center',
+                  background: '#232220',
+                  borderRadius: '12px',
+                  border: '1px dashed #3a3936',
+                  color: '#78756e',
+                  fontSize: '12.5px',
+                }}
+              >
+                {search ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : 'ยังไม่มีประวัติรายการในกระเป๋านี้'}
+              </div>
+            ) : (
+              filtered.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="pressable animate-fadein"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 12px',
+                    background: '#272624',
+                    border: '1px solid #353430',
+                    borderRadius: '12px',
+                    gap: '10px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                    <span
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        background: `${tx.tint || '#d97757'}22`,
+                        color: tx.tint || '#d97757',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        flex: 'none',
+                      }}
+                    >
+                      {tx.c || 'ทั่วไป'}
+                    </span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          font: "500 13px 'IBM Plex Sans Thai'",
+                          color: '#f0eee6',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {tx.t}
+                      </div>
+                      <div style={{ font: "400 11px 'IBM Plex Sans Thai'", color: '#78756e', marginTop: '1px' }}>
+                        {tx.when || tx.date || 'วันนี้'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 'none' }}>
+                    {tx.receipt && (
+                      <button
+                        onClick={() => setPreviewReceipt(tx.receipt)}
+                        className="pressable"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          padding: '2px',
+                        }}
+                        title="ดูสลิป/ใบเสร็จ"
+                      >
+                        🧾
+                      </button>
+                    )}
+                    <span
+                      style={{
+                        font: "600 13.5px 'IBM Plex Sans Thai'",
+                        color: tx.income ? '#6c9a76' : '#f0eee6',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {tx.income ? '+' : '-'}{fmt(tx.a)} บ.
+                    </span>
+                    {onDeleteTransaction && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`ต้องการลบรายการ "${tx.t}" หรือไม่?`)) {
+                            onDeleteTransaction(tx.id);
+                          }
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#5a5852',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          padding: '2px 4px',
+                        }}
+                        title="ลบรายการนี้"
+                        onMouseEnter={(e) => (e.currentTarget.style.color = '#d97757')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = '#5a5852')}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div
+          style={{
+            padding: '12px 20px',
+            borderTop: '1px solid #33322e',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            background: '#232220',
+          }}
+        >
+          <button style={{ ...cancelBtnStyle, padding: '8px 18px' }} onClick={onClose}>
+            ปิด
+          </button>
+        </div>
+      </div>
+
+      {previewReceipt && (
+        <ReceiptPreviewModal src={previewReceipt} onClose={() => setPreviewReceipt(null)} />
+      )}
+    </div>
+  );
+}
+

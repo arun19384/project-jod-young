@@ -570,7 +570,7 @@ export default function App() {
             }}
           />
           <span style={{ fontWeight: '700', fontSize: '16px', color: '#f0eee6', letterSpacing: '-0.01em' }}>
-            จดเงิน
+            จดยัง
           </span>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -687,6 +687,8 @@ export default function App() {
             onDeleteTransaction={handleDeleteTransaction}
             onSelectTab={(newTab) => setTab(newTab)}
             onOpenSearch={() => setShowSearchModal(true)}
+            onEditAccount={(acc) => setEditAccountTarget(acc)}
+            onOpenTransferModal={() => setShowTransferModal(true)}
           />
         )}
         {tab === 'add' && (
@@ -700,11 +702,13 @@ export default function App() {
         {tab === 'bank' && (
           <BankTab
             data={accountsData}
+            transactions={transactions}
             onToggleFixed={handleToggleFixed}
             onDeleteFixed={handleDeleteFixed}
             onDeleteAccount={handleDeleteAccount}
             onDeleteCard={handleDeleteCard}
             onEditAccount={(acc) => setEditAccountTarget(acc)}
+            onDeleteTransaction={handleDeleteTransaction}
             onOpenAddAccount={() => setShowAddAccountModal(true)}
             onOpenTransferModal={() => setShowTransferModal(true)}
             onOpenAddCard={() => setShowAddCardModal(true)}
@@ -884,7 +888,7 @@ export default function App() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img
               src="/app-logo.png"
-              alt="จดเงิน"
+              alt="จดยัง"
               style={{
                 width: '46px',
                 height: '46px',
@@ -898,7 +902,7 @@ export default function App() {
               <div style={{ font: "500 11px/1 'IBM Plex Mono', monospace", letterSpacing: '.14em', color: '#8a8780', textTransform: 'uppercase' }}>
                 Personal Finance App
               </div>
-              <div style={{ font: "600 22px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>จดเงิน</div>
+              <div style={{ font: "600 22px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>จดยัง</div>
             </div>
           </div>
           <div style={{ font: "300 13px/1.4 'IBM Plex Sans Thai'", color: '#8a8780' }}>
