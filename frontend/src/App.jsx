@@ -705,6 +705,9 @@ export default function App() {
             onEditAccount={(acc) => setEditAccountTarget(acc)}
             onOpenTransferModal={() => setShowTransferModal(true)}
             onOpenPayCard={(card) => setPayCardTarget(card)}
+            onToggleFixed={handleToggleFixed}
+            onOpenAddFixed={() => setShowAddFixedModal(true)}
+            onDeleteFixed={handleDeleteFixed}
           />
         )}
         {tab === 'add' && (
