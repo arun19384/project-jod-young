@@ -1250,6 +1250,7 @@ export function WalletTransactionsModal({
   onDeleteTransaction,
   onEditAccount,
   onOpenTransferModal,
+  onOpenPayCard,
 }) {
   if (!wallet) return null;
 
@@ -1257,21 +1258,61 @@ export function WalletTransactionsModal({
   const [filterType, setFilterType] = useState('ALL'); // ALL, OUT, IN
   const [previewReceipt, setPreviewReceipt] = useState(null);
 
+  const isCard = !!(wallet.isCard || wallet.cut || wallet.due || (wallet.role && wallet.role.includes('บัตร')));
   const walletName = (wallet.name === 'เงินสด/บัญชีหลัก' || wallet.name === 'Main') ? 'บัญชีหลัก' : wallet.name;
+  const targetName = walletName.toLowerCase();
+  const targetId = (wallet.id || '').toLowerCase();
 
-  // Filter transactions matching this wallet
-  const walletTxs = transactions.filter((tx) => {
+  // 1. Convert statement lines from credit card into transactions if available
+  const cardLinesAsTxs = (isCard && Array.isArray(wallet.lines))
+    ? wallet.lines.map((l, idx) => ({
+        id: `card-stmt-${wallet.id || 'c'}-${idx}`,
+        t: l.name,
+        c: 'บัตรเครดิต',
+        a: l.amt,
+        acct: walletName,
+        date: l.date || '',
+        when: wallet.cut ? `รอบตัด ${wallet.cut}` : 'Statement บัตร',
+        income: false,
+        tint: l.bg || wallet.tint || '#9b8ec4',
+        isStatementLine: true,
+        mark: l.mark || '✓',
+      }))
+    : [];
+
+  // 2. Filter transactions matching this wallet from app transactions
+  const matchedAppTxs = transactions.filter((tx) => {
     if (!tx.acct) return false;
     const acct = tx.acct.trim().toLowerCase();
-    const targetName = walletName.toLowerCase();
-    const targetId = (wallet.id || '').toLowerCase();
-    return acct === targetName || acct === targetId ||
-      (targetName === 'บัญชีหลัก' && (acct === 'main' || acct === 'เงินสด/บัญชีหลัก'));
+    if (acct === targetName || acct === targetId) return true;
+    if (targetName === 'บัญชีหลัก' && (acct === 'main' || acct === 'เงินสด/บัญชีหลัก')) return true;
+    if (isCard) {
+      if (acct.includes(targetName) || targetName.includes(acct)) return true;
+      if (targetId && (acct === `บัตร ${targetId}` || acct === `บัตร${targetId}`)) return true;
+      if (acct.includes('บัตร') && walletName.includes('บัตร')) {
+        const cardLetter = walletName.replace('บัตร', '').trim().toLowerCase();
+        if (cardLetter && acct.includes(cardLetter)) return true;
+      }
+    }
+    return false;
   });
 
+  // 3. Combine without duplicates between statement lines and app txs
+  const walletTxs = [...matchedAppTxs];
+  cardLinesAsTxs.forEach((cline) => {
+    const exists = matchedAppTxs.some(
+      (tx) => tx.t && tx.t.trim().toLowerCase() === cline.t.trim().toLowerCase() && Math.abs(tx.a - cline.a) < 1
+    );
+    if (!exists) {
+      walletTxs.push(cline);
+    }
+  });
+
+  // Stats calculation
   const totalIn = walletTxs.filter((t) => t.income).reduce((sum, t) => sum + (t.a || 0), 0);
   const totalOut = walletTxs.filter((t) => !t.income).reduce((sum, t) => sum + (t.a || 0), 0);
 
+  // Filtered by search & type
   const filtered = walletTxs.filter((tx) => {
     if (filterType === 'IN' && !tx.income) return false;
     if (filterType === 'OUT' && tx.income) return false;
@@ -1280,11 +1321,13 @@ export function WalletTransactionsModal({
     return (
       (tx.t && tx.t.toLowerCase().includes(q)) ||
       (tx.c && tx.c.toLowerCase().includes(q)) ||
-      (tx.when && tx.when.toLowerCase().includes(q))
+      (tx.when && tx.when.toLowerCase().includes(q)) ||
+      (tx.date && tx.date.toLowerCase().includes(q))
     );
   });
 
   const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
+  const cardAmount = Math.abs(wallet.amt || totalOut || 0);
 
   return (
     <div style={modalOverlayStyle} onClick={onClose}>
@@ -1292,8 +1335,8 @@ export function WalletTransactionsModal({
         className="animate-spring-up"
         style={{
           ...modalBoxStyle,
-          maxWidth: '460px',
-          maxHeight: '85vh',
+          maxWidth: '480px',
+          maxHeight: '88vh',
           padding: '0',
           overflow: 'hidden',
           display: 'flex',
@@ -1315,19 +1358,41 @@ export function WalletTransactionsModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span
               style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                background: wallet.tint || '#d97757',
-                boxShadow: `0 0 10px ${wallet.tint || '#d97757'}88`,
+                width: '32px',
+                height: '32px',
+                borderRadius: '10px',
+                background: isCard ? 'rgba(155,142,196,0.18)' : 'rgba(217,119,87,0.18)',
+                border: `1px solid ${isCard ? '#9b8ec4' : (wallet.tint || '#d97757')}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px',
               }}
-            />
+            >
+              {isCard ? '💳' : (walletName === 'บัญชีหลัก' ? '💰' : '🏦')}
+            </span>
             <div>
-              <div style={{ font: "600 15.5px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
-                {walletName}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ font: "600 16px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
+                  {walletName}
+                </span>
+                <span
+                  style={{
+                    fontSize: '10.5px',
+                    padding: '2px 7px',
+                    borderRadius: '5px',
+                    background: isCard ? 'rgba(155,142,196,0.18)' : 'rgba(217,119,87,0.15)',
+                    color: isCard ? '#b8a9e6' : '#d97757',
+                    fontWeight: '500',
+                  }}
+                >
+                  {isCard ? 'บัตรเครดิต' : (wallet.role || 'บัญชีธนาคาร')}
+                </span>
               </div>
-              <div style={{ font: "400 11.5px/1.2 'IBM Plex Sans Thai'", color: '#8a8780' }}>
-                {wallet.role || (wallet.isCard ? 'บัตรเครดิต' : 'บัญชี')}
+              <div style={{ font: "400 11.5px/1.3 'IBM Plex Sans Thai'", color: '#8a8780', marginTop: '2px' }}>
+                {isCard
+                  ? `ตัดยอด ${wallet.cut || '-'} · ชำระภายใน ${wallet.due || '-'} ${wallet.status ? `(${wallet.status})` : ''}`
+                  : (wallet.role || 'บัญชีเงินฝาก')}
               </div>
             </div>
           </div>
@@ -1353,7 +1418,7 @@ export function WalletTransactionsModal({
 
         {/* Scrollable Body */}
         <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Wallet Balance Summary Card */}
+          {/* Wallet / Credit Card Summary Card */}
           <div
             style={{
               background: 'linear-gradient(145deg, #2b2a27 0%, #1e1d1b 100%)',
@@ -1363,17 +1428,50 @@ export function WalletTransactionsModal({
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: wallet.tint || (isCard ? '#9b8ec4' : '#d97757') }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
               <div>
-                <span style={{ font: "400 11.5px/1 'IBM Plex Sans Thai'", color: '#8a8780' }}>ยอดคงเหลือในกระเป๋า</span>
+                <span style={{ font: "400 11.5px/1 'IBM Plex Sans Thai'", color: '#8a8780' }}>
+                  {isCard ? 'ยอดที่รูดใช้ไป / ยอดค้างชำระ' : 'ยอดเงินคงเหลือในบัญชี'}
+                </span>
                 <div style={{ font: "600 28px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums', marginTop: '4px' }}>
-                  {fmt(wallet.amt)} <span style={{ fontSize: '14px', fontWeight: '400', color: '#78756e' }}>บาท</span>
+                  {isCard ? fmt(cardAmount) : fmt(wallet.amt)} <span style={{ fontSize: '14px', fontWeight: '400', color: '#78756e' }}>บาท</span>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {onEditAccount && !wallet.isCard && (
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                {isCard && onOpenPayCard && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onOpenPayCard(wallet);
+                    }}
+                    className="pressable"
+                    style={{
+                      background: 'rgba(108,154,118,0.18)',
+                      border: '1px solid rgba(108,154,118,0.35)',
+                      borderRadius: '8px',
+                      padding: '6px 10px',
+                      fontSize: '11.5px',
+                      color: '#6c9a76',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                    title="บันทึกชำระยอดบัตรนี้"
+                  >
+                    💳 ชำระยอดบัตร
+                  </button>
+                )}
+                {!isCard && onEditAccount && (
                   <button
                     onClick={() => {
                       onClose();
@@ -1394,7 +1492,7 @@ export function WalletTransactionsModal({
                     ✎ ปรับยอด
                   </button>
                 )}
-                {onOpenTransferModal && !wallet.isCard && (
+                {!isCard && onOpenTransferModal && (
                   <button
                     onClick={() => {
                       onClose();
@@ -1418,6 +1516,27 @@ export function WalletTransactionsModal({
               </div>
             </div>
 
+            {/* Credit Card Progress Bar */}
+            {isCard && wallet.pct !== undefined && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <div style={{ height: '5px', borderRadius: '99px', background: '#383630', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      borderRadius: '99px',
+                      background: wallet.tint || '#d97757',
+                      width: `${wallet.pct}%`,
+                      transition: 'width 0.4s',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', color: '#8a8780' }}>
+                  <span>ใช้วงเงินไปแล้ว {wallet.pct}%</span>
+                  <span>{wallet.due ? `ครบกำหนดชำระ ${wallet.due}` : ''}</span>
+                </div>
+              </div>
+            )}
+
             {/* Income & Expense Breakdown for this Wallet */}
             <div
               style={{
@@ -1428,18 +1547,37 @@ export function WalletTransactionsModal({
                 borderTop: '1px solid #383733',
               }}
             >
-              <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '10.5px', color: '#6c9a76' }}>⬇ เงินเข้าทั้งหมด</span>
-                <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#6c9a76', marginTop: '2px' }}>
-                  +{fmt(totalIn)} บ.
-                </div>
-              </div>
-              <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '10.5px', color: '#d97757' }}>⬆ เงินออกทั้งหมด</span>
-                <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#d97757', marginTop: '2px' }}>
-                  -{fmt(totalOut)} บ.
-                </div>
-              </div>
+              {isCard ? (
+                <>
+                  <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '10.5px', color: '#d97757' }}>💳 รูดใช้จ่ายทั้งหมด</span>
+                    <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#d97757', marginTop: '2px' }}>
+                      -{fmt(totalOut || cardAmount)} บ.
+                    </div>
+                  </div>
+                  <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '10.5px', color: '#a8a49a' }}>🧾 รายการทั้งหมด</span>
+                    <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#f0eee6', marginTop: '2px' }}>
+                      {walletTxs.length} รายการ
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '10.5px', color: '#6c9a76' }}>⬇ เงินเข้าทั้งหมด</span>
+                    <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#6c9a76', marginTop: '2px' }}>
+                      +{fmt(totalIn)} บ.
+                    </div>
+                  </div>
+                  <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '10.5px', color: '#d97757' }}>⬆ เงินออกทั้งหมด</span>
+                    <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#d97757', marginTop: '2px' }}>
+                      -{fmt(totalOut)} บ.
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -1447,7 +1585,7 @@ export function WalletTransactionsModal({
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <input
               type="text"
-              placeholder="🔍 ค้นหารายการในกระเป๋านี้..."
+              placeholder={`🔍 ค้นหารายการใน${isCard ? 'บัตรนี้' : 'บัญชีนี้'}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -1484,22 +1622,24 @@ export function WalletTransactionsModal({
                   cursor: 'pointer',
                 }}
               >
-                จ่าย
+                {isCard ? 'รูดใช้' : 'จ่าย'}
               </button>
-              <button
-                onClick={() => setFilterType('IN')}
-                style={{
-                  background: filterType === 'IN' ? 'rgba(108,154,118,0.2)' : '#2b2a27',
-                  border: `1px solid ${filterType === 'IN' ? '#6c9a76' : '#383733'}`,
-                  color: filterType === 'IN' ? '#6c9a76' : '#8a8780',
-                  borderRadius: '8px',
-                  padding: '6px 8px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                }}
-              >
-                รับ
-              </button>
+              {!isCard && (
+                <button
+                  onClick={() => setFilterType('IN')}
+                  style={{
+                    background: filterType === 'IN' ? 'rgba(108,154,118,0.2)' : '#2b2a27',
+                    border: `1px solid ${filterType === 'IN' ? '#6c9a76' : '#383733'}`,
+                    color: filterType === 'IN' ? '#6c9a76' : '#8a8780',
+                    borderRadius: '8px',
+                    padding: '6px 8px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  รับ
+                </button>
+              )}
             </div>
           </div>
 
@@ -1507,7 +1647,7 @@ export function WalletTransactionsModal({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ font: "600 12.5px 'IBM Plex Sans Thai'", color: '#a8a49a' }}>
-                ประวัติรายการ ({filtered.length} รายการ)
+                {isCard ? 'รายการรูด / ประวัติการใช้บัตร' : 'ประวัติรายการธุรกรรม'} ({filtered.length} รายการ)
               </span>
               {search && (
                 <span style={{ fontSize: '11px', color: '#78756e' }}>
@@ -1526,9 +1666,17 @@ export function WalletTransactionsModal({
                   border: '1px dashed #3a3936',
                   color: '#78756e',
                   fontSize: '12.5px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  alignItems: 'center',
                 }}
               >
-                {search ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : 'ยังไม่มีประวัติรายการในกระเป๋านี้'}
+                <span style={{ fontSize: '24px' }}>{isCard ? '💳' : '📝'}</span>
+                <div>{search ? 'ไม่พบรายการที่ตรงกับคำค้นหา' : `ยังไม่มีประวัติรายการใน${isCard ? 'บัตรนี้' : 'บัญชีนี้'}`}</div>
+                <div style={{ fontSize: '11px', color: '#5a5852' }}>
+                  เมื่อเพิ่มรายการในหน้าบันทึก โดยระบุตัดบัญชี {walletName} รายการจะปรากฏที่นี่
+                </div>
               </div>
             ) : (
               filtered.map((tx) => (
@@ -1558,7 +1706,7 @@ export function WalletTransactionsModal({
                         flex: 'none',
                       }}
                     >
-                      {tx.c || 'ทั่วไป'}
+                      {tx.c || (isCard ? 'บัตรเครดิต' : 'ทั่วไป')}
                     </span>
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div
@@ -1572,8 +1720,13 @@ export function WalletTransactionsModal({
                       >
                         {tx.t}
                       </div>
-                      <div style={{ font: "400 11px 'IBM Plex Sans Thai'", color: '#78756e', marginTop: '1px' }}>
-                        {tx.when || tx.date || 'วันนี้'}
+                      <div style={{ font: "400 11px 'IBM Plex Sans Thai'", color: '#78756e', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <span>{tx.when || tx.date || 'วันนี้'}</span>
+                        {tx.isStatementLine && (
+                          <span style={{ fontSize: '9.5px', color: '#9b8ec4', background: 'rgba(155,142,196,0.12)', padding: '1px 5px', borderRadius: '4px' }}>
+                            📋 Statement บัตร
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1604,7 +1757,7 @@ export function WalletTransactionsModal({
                     >
                       {tx.income ? '+' : '-'}{fmt(tx.a)} บ.
                     </span>
-                    {onDeleteTransaction && (
+                    {onDeleteTransaction && !tx.isStatementLine && (
                       <button
                         onClick={() => {
                           if (window.confirm(`ต้องการลบรายการ "${tx.t}" หรือไม่?`)) {

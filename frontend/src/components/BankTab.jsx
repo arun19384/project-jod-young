@@ -225,9 +225,27 @@ export default function BankTab({
                     gap: '13px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <div style={{ font: "500 14px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>{c.name}</div>
+                  {/* Card Header Info - Clickable to open transactions */}
+                  <div
+                    onClick={() => setSelectedWalletModal({ ...c, isCard: true, role: 'บัตรเครดิต', amt: -(c.amt || 0) })}
+                    className="pressable"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                      cursor: 'pointer',
+                      padding: '2px 0',
+                    }}
+                    title="แตะเพื่อดูประวัติรายการที่รูดผ่านบัตรนี้"
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ font: "500 15px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>{c.name}</span>
+                        <span style={{ fontSize: '10px', color: '#9b8ec4', background: 'rgba(155,142,196,0.15)', padding: '1px 6px', borderRadius: '4px', fontWeight: '500' }}>
+                          📄 ดูรายการ ({c.lines ? c.lines.length : 0})
+                        </span>
+                      </div>
                       <div style={{ font: "400 11px/1.3 'IBM Plex Mono', monospace", color: '#78756e', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <span>ตัด {c.cut} · จ่าย {c.due}</span>
                         {(() => {
@@ -270,7 +288,11 @@ export default function BankTab({
                   </div>
 
                   {/* Progress Bar */}
-                  <div style={{ height: '5px', borderRadius: '99px', background: '#3a3833', overflow: 'hidden' }}>
+                  <div
+                    onClick={() => setSelectedWalletModal({ ...c, isCard: true, role: 'บัตรเครดิต', amt: -(c.amt || 0) })}
+                    style={{ height: '5px', borderRadius: '99px', background: '#383630', overflow: 'hidden', cursor: 'pointer' }}
+                    title="แตะเพื่อดูประวัติรายการ"
+                  >
                     <div
                       style={{
                         height: '100%',
@@ -285,7 +307,10 @@ export default function BankTab({
                   {/* Action Buttons */}
                   <div style={{ display: 'flex', gap: '7px' }}>
                     <button
-                      onClick={() => setOpenCard(isOpen ? null : c.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenCard(isOpen ? null : c.id);
+                      }}
                       className="pressable"
                       style={{
                         flex: 1,
@@ -302,7 +327,10 @@ export default function BankTab({
                       {isOpen ? 'ปิด' : c.pdfLabel || 'แนบ PDF เทียบยอด'}
                     </button>
                     <button
-                      onClick={() => setSelectedWalletModal({ id: c.id, name: c.name, amt: -(c.amt || 0), tint: c.tint, isCard: true, role: 'บัตรเครดิต' })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedWalletModal({ ...c, isCard: true, role: 'บัตรเครดิต', amt: -(c.amt || 0) });
+                      }}
                       className="pressable"
                       style={{
                         flex: 'none',
@@ -320,7 +348,10 @@ export default function BankTab({
                       📄 ดูรายการ
                     </button>
                     <button
-                      onClick={() => onOpenPayCard && onOpenPayCard(c)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenPayCard && onOpenPayCard(c);
+                      }}
                       className="pressable"
                       style={{
                         flex: 'none',
@@ -346,7 +377,10 @@ export default function BankTab({
                     </button>
                     {onDeleteCard && (
                       <button
-                        onClick={() => onDeleteCard(c.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteCard(c.id);
+                        }}
                         title="ลบบัตรนี้"
                         style={{
                           border: 'none',
@@ -565,6 +599,7 @@ export default function BankTab({
           onDeleteTransaction={onDeleteTransaction}
           onEditAccount={onEditAccount}
           onOpenTransferModal={onOpenTransferModal}
+          onOpenPayCard={onOpenPayCard}
         />
       )}
     </div>

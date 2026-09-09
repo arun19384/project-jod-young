@@ -230,7 +230,33 @@ export default function AddTab({
     const activeCat = overrideCat || (hit ? hit.cat : 'อื่นๆ');
     const activeTint = matchedCat ? matchedCat.tint : hit ? hit.tint : '#8a8780';
 
-    const rawAcct = overrideAcct || (hit && hit.acct ? hit.acct : defaultAccount);
+    // Auto-detect account or credit card mentioned in text
+    let detectedAcct = null;
+    if (availableAccounts.length > 0) {
+      for (const acc of availableAccounts) {
+        const cleanName = (acc.name === 'เงินสด/บัญชีหลัก' || acc.name === 'Main') ? 'บัญชีหลัก' : acc.name;
+        const lowName = cleanName.toLowerCase();
+        if (words.includes(lowName) || (acc.id && words.includes(acc.id.toLowerCase()))) {
+          detectedAcct = cleanName;
+          break;
+        }
+      }
+      if (!detectedAcct) {
+        // Check for card patterns like "บัตร a", "บัตร b", "บัตร c", "บัตรเครดิต", "รูด"
+        const foundCard = availableAccounts.find((a) => {
+          const cname = a.name.toLowerCase();
+          return words.includes(cname) || (a.id && words.includes(`บัตร ${a.id.toLowerCase()}`)) || (a.id && words.includes(`บัตร${a.id.toLowerCase()}`));
+        });
+        if (foundCard) {
+          detectedAcct = foundCard.name;
+        } else if (words.includes('บัตร') || words.includes('รูด')) {
+          const firstCard = availableAccounts.find((a) => a.cut || a.isCard);
+          if (firstCard) detectedAcct = firstCard.name;
+        }
+      }
+    }
+
+    const rawAcct = overrideAcct || detectedAcct || (hit && hit.acct ? hit.acct : defaultAccount);
     const activeAcct = (rawAcct === 'Main' || rawAcct === 'เงินสด/บัญชีหลัก') ? 'บัญชีหลัก' : rawAcct;
 
     return {

@@ -19,6 +19,7 @@ export default function HomeTab({
   onOpenSearch,
   onEditAccount,
   onOpenTransferModal,
+  onOpenPayCard,
 }) {
   const [previewReceipt, setPreviewReceipt] = useState(null);
   const [selectedWalletModal, setSelectedWalletModal] = useState(null);
@@ -49,6 +50,7 @@ export default function HomeTab({
   const cards = accountsData?.cards || [];
   const allWallets = [
     ...accounts.map((a) => ({
+      ...a,
       id: a.id,
       name: (a.name === 'เงินสด/บัญชีหลัก' || a.name === 'Main') ? 'บัญชีหลัก' : a.name,
       role: a.role || 'เงินเดือน/ใช้จ่าย',
@@ -57,10 +59,11 @@ export default function HomeTab({
       isCard: false,
     })),
     ...cards.map((c) => ({
+      ...c,
       id: c.id,
       name: c.name,
-      role: `วงเงินเหลือ ${fmt((c.limit || 0) - (c.used || 0))}`,
-      amt: -(c.used || 0),
+      role: c.role || `ตัด ${c.cut || '-'} · จ่าย ${c.due || '-'}`,
+      amt: -(c.amt || c.used || 0),
       tint: c.tint || '#9b8ec4',
       isCard: true,
     })),
@@ -356,13 +359,19 @@ export default function HomeTab({
               }
             }}
             className="pressable"
-            style={{ display: 'flex', alignItems: 'baseline', gap: '7px', cursor: 'pointer' }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '2px', cursor: 'pointer' }}
             title="แตะเพื่อดูประวัติรายการในบัญชีใช้จ่าย"
           >
-            <div style={{ font: "600 46px/1 'IBM Plex Sans Thai'", color: '#f0eee6', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-              <AnimatedNumber value={spendingBalance} duration={220} />
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px' }}>
+              <div style={{ font: "600 46px/1 'IBM Plex Sans Thai'", color: '#f0eee6', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                <AnimatedNumber value={spendingBalance} duration={220} />
+              </div>
+              <div style={{ font: "400 15px/1 'IBM Plex Sans Thai'", color: '#78756e' }}>บาท</div>
             </div>
-            <div style={{ font: "400 15px/1 'IBM Plex Sans Thai'", color: '#78756e' }}>บาท</div>
+            <div style={{ fontSize: '11px', color: '#d97757', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '1px', fontWeight: '500' }}>
+              <span>📄 แตะดูประวัติรายการ</span>
+              <span>›</span>
+            </div>
           </div>
         </div>
 
@@ -549,18 +558,38 @@ export default function HomeTab({
             <div
               style={{
                 display: 'flex',
-                alignItems: 'baseline',
+                alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '4px 2px 2px',
                 borderBottom: '1px solid #37362f',
               }}
             >
               <span style={{ fontSize: '11.5px', color: '#8a8780' }}>
-                ยอดคงเหลือรวม ({visibleWallets.length} บัญชีที่เลือก):
+                ยอดคงเหลือ ({visibleWallets.length} บัญชีที่เลือก):
               </span>
-              <span style={{ font: "600 15px/1 'IBM Plex Sans Thai'", color: '#6c9a76', fontVariantNumeric: 'tabular-nums' }}>
-                ฿{fmt(selectedTotalAmt)}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ font: "600 15px/1 'IBM Plex Sans Thai'", color: '#6c9a76', fontVariantNumeric: 'tabular-nums' }}>
+                  ฿{fmt(selectedTotalAmt)}
+                </span>
+                {visibleWallets.length === 1 && (
+                  <button
+                    onClick={() => setSelectedWalletModal(visibleWallets[0])}
+                    className="pressable"
+                    style={{
+                      background: 'rgba(217,119,87,0.15)',
+                      border: '1px solid rgba(217,119,87,0.3)',
+                      color: '#d97757',
+                      borderRadius: '6px',
+                      padding: '2px 7px',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                    }}
+                  >
+                    📄 ดูรายการ
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -995,6 +1024,7 @@ export default function HomeTab({
           onDeleteTransaction={onDeleteTransaction}
           onEditAccount={onEditAccount}
           onOpenTransferModal={onOpenTransferModal}
+          onOpenPayCard={onOpenPayCard}
         />
       )}
     </div>

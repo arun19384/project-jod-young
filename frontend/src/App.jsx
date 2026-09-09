@@ -689,6 +689,7 @@ export default function App() {
             onOpenSearch={() => setShowSearchModal(true)}
             onEditAccount={(acc) => setEditAccountTarget(acc)}
             onOpenTransferModal={() => setShowTransferModal(true)}
+            onOpenPayCard={(card) => setPayCardTarget(card)}
           />
         )}
         {tab === 'add' && (

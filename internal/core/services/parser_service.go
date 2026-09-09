@@ -96,6 +96,21 @@ func (p *ParserService) ParseTransactionText(text string, forceKind string) doma
 		}
 	}
 
+	// Detect specific account or credit card in text
+	if strings.Contains(lower, "บัตร a") || strings.Contains(lower, "บัตรa") {
+		account = "บัตร A"
+	} else if strings.Contains(lower, "บัตร b") || strings.Contains(lower, "บัตรb") {
+		account = "บัตร B"
+	} else if strings.Contains(lower, "บัตร c") || strings.Contains(lower, "บัตรc") {
+		account = "บัตร C"
+	} else if strings.Contains(lower, "รูด") || strings.Contains(lower, "บัตรเครดิต") {
+		account = "บัตร A"
+	} else if strings.Contains(lower, "saving") || strings.Contains(lower, "เงินเก็บ") {
+		account = "Saving"
+	} else if strings.Contains(lower, "second") || strings.Contains(lower, "สำรอง") {
+		account = "Secondnary"
+	}
+
 	if forceKind == "out" {
 		isIncome = false
 	}
