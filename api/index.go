@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"ai-in-my-area-backend/internal/bootstrap"
+	"ai-in-my-area-backend/pkg/bootstrap"
 	"net/http"
 	"strings"
 	"sync"
