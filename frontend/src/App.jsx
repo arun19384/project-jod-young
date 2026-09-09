@@ -20,6 +20,7 @@ import {
   EditTransactionModal,
 } from './components/Modals.jsx';
 import LoadingPopup from './components/LoadingPopup.jsx';
+import AppLoadingScreen from './components/AppLoadingScreen.jsx';
 import {
   fetchSummary,
   fetchTransactions,
@@ -1090,55 +1091,7 @@ export default function App() {
       {loadingText && <LoadingPopup message={loadingText} />}
 
       {/* App Initial Database Loading Screen */}
-      {initialLoading && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: '#1a1a18',
-            zIndex: 9999999,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '24px',
-            padding: '24px',
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
-            <div
-              style={{
-                width: '68px',
-                height: '68px',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #d97757 0%, #b85d3f 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '34px',
-                boxShadow: '0 12px 32px rgba(217, 119, 87, 0.35)',
-              }}
-            >
-              📝
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ font: "700 26px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6', letterSpacing: '-0.02em' }}>
-                จดยัง
-              </div>
-              <div style={{ font: "400 13px/1.3 'IBM Plex Sans Thai'", color: '#8a8780', marginTop: '6px' }}>
-                ระบบบันทึกรายรับ-รายจ่าย & จัดการหนี้สิน
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
-            <div className="loading-spinner" style={{ width: '38px', height: '38px' }} />
-            <div style={{ font: "500 13.5px 'IBM Plex Sans Thai'", color: '#c5c2b8' }}>
-              กำลังเชื่อมต่อและโหลดข้อมูลจากฐานข้อมูล...
-            </div>
-          </div>
-        </div>
-      )}
+      {initialLoading && <AppLoadingScreen />}
     </div>
   );
 }
