@@ -6,6 +6,7 @@ export default function SearchModal({
   transactions = [],
   accounts = [],
   onDeleteTransaction,
+  onEditTransaction,
   onViewReceipt,
   onClose,
 }) {
@@ -367,6 +368,28 @@ export default function SearchModal({
                 >
                   {t.income ? '+' : '−'}{fmt(t.a)}
                 </div>
+
+                {onEditTransaction && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onEditTransaction(t);
+                    }}
+                    title="แก้ไขรายการนี้ (แก้ตัวเลข/หมวดหมู่)"
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      color: '#605e58',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: '4px',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#7fa3c9')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = '#605e58')}
+                  >
+                    ✎
+                  </button>
+                )}
 
                 {onDeleteTransaction && (
                   <button

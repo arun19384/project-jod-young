@@ -87,6 +87,40 @@ func (s *AppService) AddTransaction(req domain.AddTransactionRequest) (domain.Tr
 	return created, nil
 }
 
+func (s *AppService) UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error) {
+	if req.Amount <= 0 {
+		return domain.Transaction{}, errors.New("amount must be greater than 0")
+	}
+
+	if req.Name == "" {
+		req.Name = "ไม่ระบุ"
+	}
+	if req.Category == "" {
+		req.Category = "อื่นๆ"
+	}
+	if req.Tint == "" {
+		switch req.Category {
+		case "อาหาร":
+			req.Tint = "#d97757"
+		case "ของใช้":
+			req.Tint = "#c9a227"
+		case "ชอปปิ้ง":
+			req.Tint = "#9b8ec4"
+		case "เติมน้ำมัน":
+			req.Tint = "#7fa3c9"
+		case "รายรับ":
+			req.Tint = "#6c9a76"
+		default:
+			req.Tint = "#8a8780"
+		}
+	}
+	if req.Account == "" || req.Account == "Main" || req.Account == "เงินสด/บัญชีหลัก" {
+		req.Account = "บัญชีหลัก"
+	}
+
+	return s.repo.UpdateTransaction(id, req)
+}
+
 func (s *AppService) DeleteTransaction(id string) bool {
 	return s.repo.DeleteTransaction(id)
 }

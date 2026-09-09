@@ -522,6 +522,115 @@ func (r *StorageRepository) AddTransaction(tx domain.Transaction) domain.Transac
 	return created
 }
 
+func (r *StorageRepository) UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	updated, err := r.localStore.UpdateTransaction(id, req)
+	if err != nil && (!r.isMySQL || r.sqlDB == nil) {
+		return domain.Transaction{}, err
+	}
+
+	if r.isMySQL && r.sqlDB != nil {
+		var oldTitle, oldCategory, oldTint, oldAccount, oldDate, oldWhen, oldReceipt string
+		var oldAmount float64
+		var oldIsIncome bool
+
+		scanErr := r.sqlDB.QueryRow(`SELECT title, category, category_tint, amount, account, date, when_text, is_income, COALESCE(receipt_image, '') 
+			FROM transactions WHERE id = ?`, id).Scan(
+			&oldTitle, &oldCategory, &oldTint, &oldAmount, &oldAccount, &oldDate, &oldWhen, &oldIsIncome, &oldReceipt,
+		)
+		if scanErr != nil {
+			scanErr = r.sqlDB.QueryRow(`SELECT title, category, category_tint, amount, account, date, when_text, is_income 
+				FROM transactions WHERE id = ?`, id).Scan(
+				&oldTitle, &oldCategory, &oldTint, &oldAmount, &oldAccount, &oldDate, &oldWhen, &oldIsIncome,
+			)
+			if scanErr != nil {
+				return updated, nil
+			}
+		}
+
+		// 1. Revert old transaction in MySQL
+		if oldIsIncome {
+			_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE name = ? OR id = ?", oldAmount, oldAccount, oldAccount)
+		} else {
+			res, _ := r.sqlDB.Exec("UPDATE accounts SET amount = amount + ? WHERE name = ? OR id = ?", oldAmount, oldAccount, oldAccount)
+			if n, _ := res.RowsAffected(); n == 0 {
+				_, _ = r.sqlDB.Exec("UPDATE cards SET amount = GREATEST(0, amount - ?) WHERE name = ? OR id = ?", oldAmount, oldAccount, oldAccount)
+				_, _ = r.sqlDB.Exec("UPDATE cards SET pct = ROUND((amount / credit_limit) * 100) WHERE credit_limit > 0 AND (name = ? OR id = ?)", oldAccount, oldAccount)
+			}
+		}
+
+		// Determine new values
+		newTx := domain.Transaction{
+			ID:           id,
+			Title:        req.Name,
+			Category:     req.Category,
+			CategoryTint: req.Tint,
+			Amount:       req.Amount,
+			Account:      req.Account,
+			Date:         req.Date,
+			When:         req.When,
+			IsIncome:     req.IsIncome,
+			IsToday:      true,
+			ReceiptImage: req.Receipt,
+		}
+		if newTx.Title == "" {
+			newTx.Title = oldTitle
+		}
+		if newTx.Category == "" {
+			newTx.Category = oldCategory
+		}
+		if newTx.CategoryTint == "" {
+			newTx.CategoryTint = oldTint
+		}
+		if newTx.Amount <= 0 {
+			newTx.Amount = oldAmount
+		}
+		if newTx.Account == "" {
+			newTx.Account = oldAccount
+		}
+		if newTx.Date == "" {
+			newTx.Date = oldDate
+		}
+		if newTx.When == "" {
+			newTx.When = oldWhen
+		}
+		if newTx.ReceiptImage == "" {
+			newTx.ReceiptImage = oldReceipt
+		}
+
+		// 2. Apply new transaction in MySQL
+		if newTx.IsIncome {
+			_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount + ? WHERE name = ? OR id = ?", newTx.Amount, newTx.Account, newTx.Account)
+		} else {
+			res, _ := r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE name = ? OR id = ?", newTx.Amount, newTx.Account, newTx.Account)
+			if n, _ := res.RowsAffected(); n == 0 {
+				_, _ = r.sqlDB.Exec("UPDATE cards SET amount = amount + ? WHERE name = ? OR id = ?", newTx.Amount, newTx.Account, newTx.Account)
+				_, _ = r.sqlDB.Exec("UPDATE cards SET pct = ROUND((amount / credit_limit) * 100) WHERE credit_limit > 0 AND (name = ? OR id = ?)", newTx.Account, newTx.Account)
+			}
+		}
+
+		// 3. Update MySQL transaction record
+		_, updateErr := r.sqlDB.Exec(`UPDATE transactions SET 
+			title = ?, category = ?, category_tint = ?, amount = ?, account = ?, date = ?, when_text = ?, is_income = ?, receipt_image = ?
+			WHERE id = ?`,
+			newTx.Title, newTx.Category, newTx.CategoryTint, newTx.Amount, newTx.Account, newTx.Date, newTx.When, newTx.IsIncome, newTx.ReceiptImage,
+			id)
+		if updateErr != nil {
+			_, _ = r.sqlDB.Exec(`UPDATE transactions SET 
+				title = ?, category = ?, category_tint = ?, amount = ?, account = ?, date = ?, when_text = ?, is_income = ?
+				WHERE id = ?`,
+				newTx.Title, newTx.Category, newTx.CategoryTint, newTx.Amount, newTx.Account, newTx.Date, newTx.When, newTx.IsIncome,
+				id)
+		}
+
+		return newTx, nil
+	}
+
+	return updated, nil
+}
+
 func (r *StorageRepository) DeleteTransaction(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()

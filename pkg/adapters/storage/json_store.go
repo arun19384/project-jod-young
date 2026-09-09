@@ -223,6 +223,119 @@ func (s *JSONFileStore) AddTransaction(tx domain.Transaction) domain.Transaction
 	return tx
 }
 
+func (s *JSONFileStore) UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	idx := -1
+	var oldTx domain.Transaction
+	for i, tx := range s.db.Transactions {
+		if tx.ID == id {
+			idx = i
+			oldTx = tx
+			break
+		}
+	}
+	if idx == -1 {
+		return domain.Transaction{}, errors.New("transaction not found")
+	}
+
+	// 1. Revert old transaction balance effect
+	if oldTx.IsIncome {
+		for i, a := range s.db.Accounts {
+			if strings.EqualFold(a.Name, oldTx.Account) || strings.EqualFold(a.ID, oldTx.Account) {
+				s.db.Accounts[i].Amount -= oldTx.Amount
+				break
+			}
+		}
+	} else {
+		foundAcc := false
+		for i, a := range s.db.Accounts {
+			if strings.EqualFold(a.Name, oldTx.Account) || strings.EqualFold(a.ID, oldTx.Account) {
+				s.db.Accounts[i].Amount += oldTx.Amount
+				foundAcc = true
+				break
+			}
+		}
+		if !foundAcc {
+			for i, c := range s.db.Cards {
+				if strings.EqualFold(c.Name, oldTx.Account) || strings.EqualFold(c.ID, oldTx.Account) {
+					s.db.Cards[i].Amount -= oldTx.Amount
+					if s.db.Cards[i].Amount < 0 {
+						s.db.Cards[i].Amount = 0
+					}
+					if s.db.Cards[i].Limit > 0 {
+						s.db.Cards[i].Pct = int((s.db.Cards[i].Amount / s.db.Cards[i].Limit) * 100)
+					}
+					break
+				}
+			}
+		}
+	}
+
+	// 2. Prepare new transaction
+	newTx := oldTx
+	if req.Name != "" {
+		newTx.Title = req.Name
+	}
+	if req.Category != "" {
+		newTx.Category = req.Category
+	}
+	if req.Tint != "" {
+		newTx.CategoryTint = req.Tint
+	}
+	if req.Amount > 0 {
+		newTx.Amount = req.Amount
+	}
+	if req.Account != "" {
+		newTx.Account = req.Account
+	}
+	if req.Date != "" {
+		newTx.Date = req.Date
+	}
+	if req.When != "" {
+		newTx.When = req.When
+	}
+	newTx.IsIncome = req.IsIncome
+	if req.Receipt != "" {
+		newTx.ReceiptImage = req.Receipt
+	}
+
+	// 3. Apply new transaction balance effect
+	if newTx.IsIncome {
+		for i, a := range s.db.Accounts {
+			if strings.EqualFold(a.Name, newTx.Account) || strings.EqualFold(a.ID, newTx.Account) {
+				s.db.Accounts[i].Amount += newTx.Amount
+				break
+			}
+		}
+	} else {
+		foundAcc := false
+		for i, a := range s.db.Accounts {
+			if strings.EqualFold(a.Name, newTx.Account) || strings.EqualFold(a.ID, newTx.Account) {
+				s.db.Accounts[i].Amount -= newTx.Amount
+				foundAcc = true
+				break
+			}
+		}
+		if !foundAcc {
+			for i, c := range s.db.Cards {
+				if strings.EqualFold(c.Name, newTx.Account) || strings.EqualFold(c.ID, newTx.Account) {
+					s.db.Cards[i].Amount += newTx.Amount
+					if s.db.Cards[i].Limit > 0 {
+						s.db.Cards[i].Pct = int((s.db.Cards[i].Amount / s.db.Cards[i].Limit) * 100)
+					}
+					break
+				}
+			}
+		}
+	}
+
+	s.db.Transactions[idx] = newTx
+	_ = s.save()
+	return newTx, nil
+}
+
 func (s *JSONFileStore) DeleteTransaction(id string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()

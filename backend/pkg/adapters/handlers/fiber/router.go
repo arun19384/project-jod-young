@@ -47,6 +47,7 @@ func NewFiberRouter(appUseCase ports.AppUseCase, parserUseCase ports.ParserUseCa
 	// Transactions
 	api.Get("/transactions", h.GetTransactions)
 	api.Post("/transactions", h.AddTransaction)
+	api.Put("/transactions/:id", h.UpdateTransaction)
 	api.Delete("/transactions/:id", h.DeleteTransaction)
 
 	// Debts

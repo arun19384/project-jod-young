@@ -9,6 +9,7 @@ type AppUseCase interface {
 	GetSummary() domain.SummaryResponse
 	GetTransactions() []domain.Transaction
 	AddTransaction(req domain.AddTransactionRequest) (domain.Transaction, error)
+	UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error)
 	DeleteTransaction(id string) bool
 
 	GetDebts() []domain.Debt
@@ -52,6 +53,7 @@ type RepositoryPort interface {
 	GetSummary() domain.SummaryResponse
 	GetTransactions() []domain.Transaction
 	AddTransaction(tx domain.Transaction) domain.Transaction
+	UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error)
 	DeleteTransaction(id string) bool
 
 	GetDebts() []domain.Debt

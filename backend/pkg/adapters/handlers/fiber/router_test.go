@@ -79,4 +79,48 @@ func TestHexagonalFiberAPI(t *testing.T) {
 	if resp.StatusCode != 200 {
 		t.Errorf("Expected 200, got %d", resp.StatusCode)
 	}
+
+	// 4. Test Add and Update Transaction
+	addPayload := domain.AddTransactionRequest{
+		Text: "กาแฟ 120",
+		Kind: "out",
+	}
+	addBytes, _ := json.Marshal(addPayload)
+	req = httptest.NewRequest("POST", "/api/transactions", bytes.NewReader(addBytes))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err = app.Test(req, 5000)
+	if err != nil || resp.StatusCode != 201 {
+		t.Fatalf("Add transaction failed: %v (status %d)", err, resp.StatusCode)
+	}
+
+	body, _ = io.ReadAll(resp.Body)
+	var addedTx domain.Transaction
+	_ = json.Unmarshal(body, &addedTx)
+	if addedTx.ID == "" {
+		t.Fatalf("Expected transaction ID to be generated")
+	}
+
+	// Update Transaction: Change amount to 150 and title to กาแฟดริป
+	updatePayload := domain.UpdateTransactionRequest{
+		Name:     "กาแฟดริป",
+		Category: "อาหาร",
+		Tint:     "#d97757",
+		Amount:   150,
+		Account:  "บัญชีหลัก",
+		IsIncome: false,
+	}
+	upBytes, _ := json.Marshal(updatePayload)
+	req = httptest.NewRequest("PUT", "/api/transactions/"+addedTx.ID, bytes.NewReader(upBytes))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err = app.Test(req, 5000)
+	if err != nil || resp.StatusCode != 200 {
+		t.Fatalf("Update transaction failed: %v (status %d)", err, resp.StatusCode)
+	}
+
+	body, _ = io.ReadAll(resp.Body)
+	var updatedTx domain.Transaction
+	_ = json.Unmarshal(body, &updatedTx)
+	if updatedTx.Amount != 150 || updatedTx.Title != "กาแฟดริป" {
+		t.Errorf("Expected amount 150 and title 'กาแฟดริป', got %f, %s", updatedTx.Amount, updatedTx.Title)
+	}
 }

@@ -83,6 +83,31 @@ func (h *FiberHandler) AddTransaction(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(tx)
 }
 
+func (h *FiberHandler) UpdateTransaction(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Transaction ID required",
+		})
+	}
+
+	var req domain.UpdateTransactionRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request payload",
+		})
+	}
+
+	tx, err := h.appUseCase.UpdateTransaction(id, req)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": err.Error(),
+		})
+	}
+
+	return c.JSON(tx)
+}
+
 func (h *FiberHandler) DeleteTransaction(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if id == "" {

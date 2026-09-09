@@ -34,6 +34,7 @@ export default function BankTab({
   onDeleteCard,
   onEditAccount,
   onDeleteTransaction,
+  onEditTransaction,
   onOpenAddAccount,
   onOpenTransferModal,
   onOpenAddCard,
@@ -597,6 +598,7 @@ export default function BankTab({
           transactions={transactions}
           onClose={() => setSelectedWalletModal(null)}
           onDeleteTransaction={onDeleteTransaction}
+          onEditTransaction={onEditTransaction}
           onEditAccount={onEditAccount}
           onOpenTransferModal={onOpenTransferModal}
           onOpenPayCard={onOpenPayCard}

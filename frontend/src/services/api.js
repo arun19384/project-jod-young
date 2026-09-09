@@ -22,6 +22,16 @@ export async function addTransaction(payload) {
   return res.json();
 }
 
+export async function updateTransaction(id, payload) {
+  const res = await fetch(`${API_BASE}/transactions/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Failed to update transaction');
+  return res.json();
+}
+
 export async function deleteTransaction(id) {
   const res = await fetch(`${API_BASE}/transactions/${id}`, {
     method: 'DELETE',

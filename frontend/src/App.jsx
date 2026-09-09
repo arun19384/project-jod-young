@@ -17,12 +17,14 @@ import {
   SettingsModal,
   TransferModal,
   ReceiptPreviewModal,
+  EditTransactionModal,
 } from './components/Modals.jsx';
 import LoadingPopup from './components/LoadingPopup.jsx';
 import {
   fetchSummary,
   fetchTransactions,
   addTransaction,
+  updateTransaction,
   deleteTransaction,
   fetchDebts,
   addDebt,
@@ -181,7 +183,9 @@ export default function App() {
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [previewReceipt, setPreviewReceipt] = useState(null);
   const [editAccountTarget, setEditAccountTarget] = useState(null);
+  const [editTransactionTarget, setEditTransactionTarget] = useState(null);
   const [loadingText, setLoadingText] = useState(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Security / PIN Lock state
   const [isLocked, setIsLocked] = useState(() => {
@@ -330,6 +334,8 @@ export default function App() {
     } catch (err) {
       console.warn('API Error or connecting to local Go backend:', err);
       setBackendOnline(false);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -360,6 +366,13 @@ export default function App() {
       await loadData();
       setTab('home');
     }, 'กำลังบันทึกรายการ...');
+  };
+
+  const handleUpdateTransaction = (id, updatedData) => {
+    return runWithLoading(async () => {
+      await updateTransaction(id, updatedData);
+      await loadData();
+    }, 'กำลังบันทึกการแก้ไข...');
   };
 
   const handleDeleteTransaction = (id) => {
@@ -685,6 +698,7 @@ export default function App() {
             onOpenAddDebt={() => setShowAddDebtModal(true)}
             onOpenEditBudget={() => setShowBudgetModal(true)}
             onDeleteTransaction={handleDeleteTransaction}
+            onEditTransaction={(tx) => setEditTransactionTarget(tx)}
             onSelectTab={(newTab) => setTab(newTab)}
             onOpenSearch={() => setShowSearchModal(true)}
             onEditAccount={(acc) => setEditAccountTarget(acc)}
@@ -696,6 +710,7 @@ export default function App() {
           <AddTab
             onAddTransaction={handleAddTransaction}
             onDeleteTransaction={handleDeleteTransaction}
+            onEditTransaction={(tx) => setEditTransactionTarget(tx)}
             transactions={transactions}
             availableAccounts={availableAccounts}
           />
@@ -710,6 +725,7 @@ export default function App() {
             onDeleteCard={handleDeleteCard}
             onEditAccount={(acc) => setEditAccountTarget(acc)}
             onDeleteTransaction={handleDeleteTransaction}
+            onEditTransaction={(tx) => setEditTransactionTarget(tx)}
             onOpenAddAccount={() => setShowAddAccountModal(true)}
             onOpenTransferModal={() => setShowTransferModal(true)}
             onOpenAddCard={() => setShowAddCardModal(true)}
@@ -1031,8 +1047,19 @@ export default function App() {
           transactions={transactions}
           accounts={accountsData?.accounts || []}
           onDeleteTransaction={handleDeleteTransaction}
+          onEditTransaction={(tx) => setEditTransactionTarget(tx)}
           onViewReceipt={(src) => setPreviewReceipt(src)}
           onClose={() => setShowSearchModal(false)}
+        />
+      )}
+
+      {editTransactionTarget && (
+        <EditTransactionModal
+          tx={editTransactionTarget}
+          accounts={accountsData?.accounts || []}
+          cards={accountsData?.cards || []}
+          onSave={handleUpdateTransaction}
+          onClose={() => setEditTransactionTarget(null)}
         />
       )}
 
@@ -1061,6 +1088,57 @@ export default function App() {
 
       {/* Global Action Loading Popup */}
       {loadingText && <LoadingPopup message={loadingText} />}
+
+      {/* App Initial Database Loading Screen */}
+      {initialLoading && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: '#1a1a18',
+            zIndex: 9999999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '24px',
+            padding: '24px',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '68px',
+                height: '68px',
+                borderRadius: '20px',
+                background: 'linear-gradient(135deg, #d97757 0%, #b85d3f 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '34px',
+                boxShadow: '0 12px 32px rgba(217, 119, 87, 0.35)',
+              }}
+            >
+              📝
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ font: "700 26px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6', letterSpacing: '-0.02em' }}>
+                จดยัง
+              </div>
+              <div style={{ font: "400 13px/1.3 'IBM Plex Sans Thai'", color: '#8a8780', marginTop: '6px' }}>
+                ระบบบันทึกรายรับ-รายจ่าย & จัดการหนี้สิน
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+            <div className="loading-spinner" style={{ width: '38px', height: '38px' }} />
+            <div style={{ font: "500 13.5px 'IBM Plex Sans Thai'", color: '#c5c2b8' }}>
+              กำลังเชื่อมต่อและโหลดข้อมูลจากฐานข้อมูล...
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -79,6 +79,7 @@ const PRESET_COLORS = [
 export default function AddTab({
   onAddTransaction,
   onDeleteTransaction,
+  onEditTransaction,
   transactions = [],
   availableAccounts = [],
 }) {
@@ -768,6 +769,24 @@ export default function AddTab({
                 >
                   {e.income ? '+' : '−'}{fmt(e.a)}
                 </div>
+                {onEditTransaction && (
+                  <button
+                    onClick={() => onEditTransaction(e)}
+                    title="แก้ไขรายการนี้ (แก้ตัวเลข/หมวดหมู่)"
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      color: '#5a5852',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      padding: '2px 4px',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#7fa3c9')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = '#5a5852')}
+                  >
+                    ✎
+                  </button>
+                )}
                 {onDeleteTransaction && (
                   <button
                     onClick={() => onDeleteTransaction(e.id)}

@@ -150,6 +150,18 @@ type AddTransactionRequest struct {
 	Receipt  string  `json:"receipt"`
 }
 
+type UpdateTransactionRequest struct {
+	Name     string  `json:"t"`
+	Category string  `json:"c"`
+	Tint     string  `json:"tint"`
+	Amount   float64 `json:"a"`
+	Account  string  `json:"acct"`
+	Date     string  `json:"date"`
+	When     string  `json:"when"`
+	IsIncome bool    `json:"income"`
+	Receipt  string  `json:"receipt"`
+}
+
 type DBConnectRequest struct {
 	DatabaseURL string `json:"database_url"`
 }

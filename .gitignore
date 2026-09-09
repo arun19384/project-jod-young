@@ -25,6 +25,8 @@ frontend/.vite/
 backend/.env
 backend/data/config.json
 data/config.json
+**/data/config.json
+**/data/store.json
 
 # Local runtime data
 backend/data/store.json
