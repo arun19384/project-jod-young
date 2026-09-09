@@ -1,0 +1,3 @@
+﻿{
+  "database_url": "mysql://<USERNAME>:<PASSWORD>@<HOST>:4000/jod_ngen"
+}

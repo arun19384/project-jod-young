@@ -4,14 +4,18 @@
 
 ---
 
-## สถาปัตยกรรมระบบ
+## สถาปัตยกรรมระบบ (Hexagonal Architecture)
 
 ```mermaid
 graph TD
-    User[ผู้ใช้งาน / Browser] -->|Port 5173| FE[React + Vite Frontend]
-    FE -->|REST API / JSON| BE[Golang Backend Server :8080]
-    BE -->|Natural Language Parser| NLP[Thai Text Parser Engine]
-    BE -->|Read/Write File| DB[(backend/data/db.json)]
+    User[ผู้ใช้งาน / Mobile / Web] -->|Port 5173| FE[React 18 + Vite Frontend]
+    FE -->|REST API / JSON| Fiber[Inbound Adapter: Go Fiber v2 Server :8080]
+    Vercel[Vercel Serverless Function] -->|fiber/adaptor| Fiber
+    Fiber --> InboundPort[Inbound Ports: AppUseCase / ParserUseCase]
+    InboundPort --> CoreService[Hexagon Core: AppService / Thai NLP Parser]
+    CoreService --> OutboundPort[Outbound Ports: RepositoryPort / ConfigPort]
+    OutboundPort --> Viper[Config Adapter: Viper .env / config.json]
+    OutboundPort --> Storage[Storage Adapter: TiDB Cloud MySQL + Local JSON Fallback]
 ```
 
 - **Frontend (FE)**: React 18, Vite, IBM Plex Sans Thai & IBM Plex Mono Fonts
@@ -21,10 +25,11 @@ graph TD
   - **แท็บ 4: ผ่อน (Installments)**: ยอดผ่อนรวมต่อเดือน และยอดคงเหลือทั้งหมด พร้อมการ์ดรายการผ่อนทั้ง 8 ตัว แสดง Progress Pips ตามงวดที่ชำระ และคำนวณเดือนที่จะผ่อนจบ
   - **Viewport Mode**: ปุ่มสลับมุมมอง "📱 จอมือถือ" (Mobile Frame) หรือ "🖥️ จอกว้าง" (Wide Layout)
 
-- **Backend (BE)**: Golang REST API Server (Port 8080)
-  - พัฒนาด้วย Standard Library `net/http` เบา รวดเร็ว ปลอดภัย
-  - ตัววิเคราะห์ตัดคำภาษาไทยอัตโนมัติ (Thai NLP Parsing)
-  - ระบบจัดเก็บข้อมูลถาวรใน `backend/data/db.json` (ข้อมูลไม่หายเมื่อปิดเซิร์ฟเวอร์)
+- **Backend (BE)**: Hexagonal Architecture (Ports & Adapters)
+  - **Framework**: **Go Fiber v2** รวดเร็ว ประสิทธิภาพสูง พร้อม `fiber/adaptor` รองรับ Vercel Serverless Function
+  - **Config Management**: **Viper** จัดการ Environment variables (`.env`) และตั้งค่าฐานข้อมูล
+  - **Core Domain & Ports**: แยก Business Rules และ Use Cases เป็นอิสระจาก Framework
+  - **Data Storage**: รองรับ TiDB Cloud / MySQL พร้อมระบบ Fallback เป็น Local JSON Persistence อัตโนมัติ
 
 ---
 
@@ -39,9 +44,8 @@ graph TD
 
 ### หรือแยกรันทีละระบบ
 
-#### 1. Backend (Golang)
+#### 1. Backend (Golang Hexagonal Fiber Server)
 ```powershell
-cd backend
 go run main.go
 # เซิร์ฟเวอร์ทำงานที่ http://localhost:8080
 ```

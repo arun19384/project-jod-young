@@ -1,13 +1,14 @@
 package services
 
 import (
-	"ai-in-my-area-backend/models"
+	"ai-in-my-area-backend/internal/core/domain"
+	"ai-in-my-area-backend/internal/core/ports"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-type CategoryRule struct {
+type categoryRule struct {
 	Keywords []string
 	Category string
 	Tint     string
@@ -15,7 +16,7 @@ type CategoryRule struct {
 	IsIncome bool
 }
 
-var categoryRules = []CategoryRule{
+var categoryRules = []categoryRule{
 	{
 		Keywords: []string{"ข้าว", "อาหาร", "ก๋วยเตี๋ยว", "หมูกระทะ", "ชาบู", "กิน", "ส้มตำ", "ข้าวมันไก่", "ขนม", "กะเพรา", "ซูชิ", "ซูชิโระ", "sushi", "sushiro", "ราเมง", "กาแฟ", "ชา", "ลาเต้", "อเมริกาโน่", "starbucks", "ชาเขียว", "ชานม", "kfc", "mcdonald", "พิซซ่า", "mk", "บุฟเฟ่ต์", "ของกิน"},
 		Category: "อาหาร",
@@ -52,7 +53,13 @@ var categoryRules = []CategoryRule{
 var numberRegex = regexp.MustCompile(`(\d[\d,]*(?:\.\d+)?)`)
 var stripNumberRegex = regexp.MustCompile(`(\d[\d,]*(?:\.\d+)?)\s*(บาท)?`)
 
-func ParseTransactionText(text string, forceKind string) models.ParseResponse {
+type ParserService struct{}
+
+func NewParserService() ports.ParserUseCase {
+	return &ParserService{}
+}
+
+func (p *ParserService) ParseTransactionText(text string, forceKind string) domain.ParseResponse {
 	trimmed := strings.TrimSpace(text)
 	lower := strings.ToLower(trimmed)
 
@@ -102,7 +109,7 @@ func ParseTransactionText(text string, forceKind string) models.ParseResponse {
 		}
 	}
 
-	return models.ParseResponse{
+	return domain.ParseResponse{
 		Name:     name,
 		Amount:   amount,
 		Category: category,

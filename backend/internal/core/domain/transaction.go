@@ -1,4 +1,4 @@
-package models
+package domain
 
 type Transaction struct {
 	ID           string  `json:"id"`
@@ -129,6 +129,36 @@ type ResetRequest struct {
 	CleanSlate bool `json:"cleanSlate"`
 }
 
+type TransferRequest struct {
+	FromID string  `json:"from_id"`
+	ToID   string  `json:"to_id"`
+	Amount float64 `json:"amount"`
+	Note   string  `json:"note"`
+}
+
+type AddTransactionRequest struct {
+	Text     string  `json:"text"`
+	Name     string  `json:"t"`
+	Category string  `json:"c"`
+	Tint     string  `json:"tint"`
+	Amount   float64 `json:"a"`
+	Account  string  `json:"acct"`
+	IsIncome bool    `json:"income"`
+	Kind     string  `json:"kind"`
+	Receipt  string  `json:"receipt"`
+}
+
+type DBConnectRequest struct {
+	DatabaseURL string `json:"database_url"`
+}
+
+type DatabaseStatus struct {
+	Connected   bool   `json:"connected"`
+	Engine      string `json:"engine"`
+	DatabaseURL string `json:"database_url,omitempty"`
+	Error       string `json:"error,omitempty"`
+}
+
 type Database struct {
 	MonthlyBudget float64           `json:"monthlyBudget"`
 	Transactions  []Transaction     `json:"transactions"`
@@ -137,4 +167,12 @@ type Database struct {
 	Cards         []CreditCard      `json:"cards"`
 	Fixed         []FixedExpense    `json:"fixed"`
 	Plans         []InstallmentPlan `json:"plans"`
+}
+
+type AppConfig struct {
+	Port         string `mapstructure:"port" json:"port"`
+	DatabaseURL  string `mapstructure:"database_url" json:"database_url"`
+	ConfigPath   string `mapstructure:"config_path" json:"config_path"`
+	AllowOrigins string `mapstructure:"allow_origins" json:"allow_origins"`
+	Environment  string `mapstructure:"env" json:"env"`
 }

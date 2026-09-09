@@ -10,9 +10,9 @@ Write-Host "==========================================================" -Foregro
 Write-Host "       เริ่มต้นรันแอปพลิเคชัน 'จดเงิน' (FE + BE)           " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor DarkCyan
 
-# สตาร์ต Backend (Golang) บนพอร์ต 8080
-Write-Host "`n[1/2] เริ่มต้นรัน Golang Backend Server (:8080)..." -ForegroundColor Yellow
-$backendProcess = Start-Process -FilePath "go" -ArgumentList "run", "main.go" -WorkingDirectory "$projectRoot\backend" -PassThru
+# สตาร์ต Backend (Golang Hexagonal Fiber) บนพอร์ต 8080
+Write-Host "`n[1/2] เริ่มต้นรัน Golang Hexagonal Server (:8080)..." -ForegroundColor Yellow
+$backendProcess = Start-Process -FilePath "go" -ArgumentList "run", "main.go" -WorkingDirectory "$projectRoot" -PassThru
 
 # รอ Backend เริ่มต้น
 Start-Sleep -Seconds 2
