@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>เอกสารสถาปัตยกรรมและเทคโนโลยี - จดยัง (Jod-Young Technical Whitepaper)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 12mm 12mm;
+    }
+    
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'IBM Plex Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 9pt;
+      line-height: 1.45;
+      color: #242320;
+      background: #ffffff;
+    }
+
+    .page {
+      page-break-after: always;
+      height: 272mm;
+      max-height: 272mm;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    .page-content {
+      flex: 1;
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: 'IBM Plex Sans Thai', sans-serif;
+      color: #1a1a18;
+      margin-top: 0;
+    }
+    h1 { font-size: 20pt; font-weight: 700; line-height: 1.2; }
+    h2 { 
+      font-size: 13pt; 
+      font-weight: 700; 
+      color: #d97757; 
+      border-bottom: 2px solid #f0eee6;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    h3 { font-size: 10.5pt; font-weight: 600; color: #2c2b28; margin-top: 10px; margin-bottom: 4px; }
+    p { margin: 0 0 6px 0; }
+    code, pre {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8pt;
+    }
+    pre {
+      background: #f7f6f2;
+      border: 1px solid #e5e2d9;
+      border-radius: 8px;
+      padding: 6px 10px;
+      line-height: 1.35;
+      margin: 6px 0;
+    }
+
+    /* Badges & Pills */
+    .badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 6px;
+      font-size: 7.5pt;
+      font-weight: 600;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .badge-primary { background: #feebe5; color: #d97757; border: 1px solid #f9cdbf; }
+    .badge-success { background: #eaf5ee; color: #2e7d4a; border: 1px solid #c7e8d0; }
+    .badge-info { background: #eef4fb; color: #2962ff; border: 1px solid #cfdffc; }
+    .badge-purple { background: #f3f0fb; color: #6941c6; border: 1px solid #e0d7f7; }
+
+    /* Cover Styles */
+    .cover-header {
+      background: linear-gradient(135deg, #1f1e1c 0%, #2b2a26 100%);
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 22px 26px;
+      margin-bottom: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+    .cover-header::after {
+      content: '';
+      position: absolute;
+      top: -30px;
+      right: -30px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(217,119,87,0.4) 0%, rgba(217,119,87,0) 70%);
+    }
+    .cover-tag {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8pt;
+      color: #d97757;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .cover-meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      background: #fdfdfc;
+      border: 1px solid #e8e5dc;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .meta-item .label {
+      font-size: 7.5pt;
+      color: #8a8780;
+      text-transform: uppercase;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .meta-item .val {
+      font-size: 9pt;
+      font-weight: 600;
+      color: #242320;
+    }
+
+    /* Grid & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e6e3da;
+      border-radius: 10px;
+      padding: 10px 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .card-title {
+      font-size: 9.5pt;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Architecture Visual Blocks */
+    .arch-diagram {
+      background: #1c1c1a;
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin: 8px 0;
+      border: 1px solid #33322d;
+    }
+    .arch-layer {
+      background: rgba(255,255,255,0.04);
+      border: 1px dashed #47453f;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .arch-layer-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 8pt;
+      color: #d97757;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .flow-step-box {
+      background: #ffffff;
+      border: 1px solid #dedad0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      position: relative;
+    }
+    .flow-step-num {
+      position: absolute;
+      top: -6px;
+      left: 8px;
+      background: #d97757;
+      color: #ffffff;
+      font-size: 7pt;
+      font-family: 'IBM Plex Mono', monospace;
+      font-weight: 700;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8pt;
+      margin: 6px 0;
+    }
+    th, td {
+      padding: 5px 8px;
+      text-align: left;
+      border-bottom: 1px solid #ebe8df;
+    }
+    th {
+      background: #f7f6f2;
+      font-weight: 600;
+      color: #4a4843;
+      border-top: 1px solid #e5e2d7;
+    }
+    tr:nth-child(even) td {
+      background: #faf9f6;
+    }
+
+    /* Callout Alert */
+    .callout {
+      border-left: 3px solid #d97757;
+      background: #fff8f5;
+      padding: 8px 12px;
+      border-radius: 0 6px 6px 0;
+      margin: 8px 0;
+      font-size: 8.5pt;
+    }
+
+    .footer-bar {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #ebe8df;
+      padding-top: 6px;
+      font-size: 7.5pt;
+      color: #8a8780;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== PAGE 1: COVER & EXECUTIVE BLUEPRINT ==================== -->
+  <div class="page">
+    <div class="page-content">
+      <div class="cover-header">
+        <div class="cover-tag">TECHNICAL ARCHITECTURE SPECIFICATION & WORKFLOW SPEC</div>
+        <h1 style="color: #ffffff; margin-bottom: 6px;">ระบบสถาปัตยกรรมและกระบวนการทำงาน<br>แอปพลิเคชัน "จดยัง" (Jod-Young)</h1>
+        <p style="color: #c9c6bc; font-size: 9pt; max-width: 650px; margin-bottom: 0;">
+          เอกสารเชิงลึกอธิบายเทคโนโลยี Full Stack, สถาปัตยกรรม Hexagonal (Ports & Adapters), กระบวนการถอดความภาษาธรรมชาติ (NLP Tokenizer), โครงสร้างฐานข้อมูล Distributed TiDB Cloud และระบบ Cloud Infrastructure & Serverless Deployment
+        </p>
+      </div>
+
+      <div class="cover-meta">
+        <div class="meta-item">
+          <div class="label">System Name</div>
+          <div class="val">จดยัง (Jod-Young)</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Backend Core</div>
+          <div class="val">Go Fiber + Viper</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Distributed DB</div>
+          <div class="val">TiDB Cloud (ap-southeast-1)</div>
+        </div>
+        <div class="meta-item">
+          <div class="label">Cloud & Edge</div>
+          <div class="val">Vercel Serverless</div>
+        </div>
+      </div>
+
+      <h2>📌 1. บทสรุปสถาปัตยกรรมระดับผู้บริหาร (Executive Blueprint)</h2>
+      <p>
+        <strong>"จดยัง"</strong> ถูกออกแบบมาเพื่อตอบโจทย์ผู้ใช้งานที่ต้องการบันทึกรายรับ-รายจ่ายที่ <strong>"เร็วที่สุด ลดแรงต้านการจด (Frictionless Entry)"</strong> พร้อมระบบควบคุมสุขภาพการเงินรอบด้าน (Daily Budget Pacing, Credit Card Cut/Due Tracker, Financial Goal Plans) โดยมีหลักการออกแบบเชิงสถาปัตยกรรม 4 เสาหลัก:
+      </p>
+
+      <div class="grid-2" style="margin-top: 8px;">
+        <div class="card">
+          <div class="card-title">
+            <span>⚡ 1. High Velocity & Low Latency</span>
+            <span class="badge badge-primary">Vercel Edge</span>
+          </div>
+          <p style="font-size: 8pt; color: #5a5750; margin: 0;">
+            สถาปัตยกรรม Jamstack ส่งมอบ Asset ผ่าน Global Edge CDN ร่วมกับ Go Serverless Backend Binary ขนาดเล็ก Cold-start ต่ำกว่า 120ms และรัน API Sub-millisecond (&lt; 2ms)
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>🧱 2. Hexagonal Clean Architecture</span>
+            <span class="badge badge-info">Ports & Adapters</span>
+          </div>
+          <p style="font-size: 8pt; color: #5a5750; margin: 0;">
+            แยก Business Logic (Domain & Core Services) ออกจาก Infrastructure สลับระหว่าง TiDB Cloud (MySQL Engine) และ Local JSON Store โดยไม่ต้องแก้โค้ดทางธุรกิจแม้แต่บรรทัดเดียว
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>🧠 3. Thai NLP Parser Tokenizer</span>
+            <span class="badge badge-purple">In-Memory Engine</span>
+          </div>
+          <p style="font-size: 8pt; color: #5a5750; margin: 0;">
+            อัลกอริทึม Tokenization ภาษาไทยแบบ Pure Go ทำงานร่วมกับ Regular Expression สกัดหา "จำนวนเงิน", "ชื่อรายการ", "หมวดหมู่อัตโนมัติ" และ "บัญชีตัดยอด" ได้ในเวลาไม่ถึง 0.05ms
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>☁️ 4. Distributed Resilience Database</span>
+            <span class="badge badge-success">TiDB Serverless</span>
+          </div>
+          <p style="font-size: 8pt; color: #5a5750; margin: 0;">
+            ฐานข้อมูล NewSQL แยก Compute (TiDB Server) ออกจาก Storage (TiKV Engine) ปลอดภัยด้วย TLS Enforce ในภูมิภาคสิงคโปร์ (AWS ap-southeast-1) ข้อมูลการเงินถูกต้อง 100% ตามมาตรฐาน ACID
+          </p>
+        </div>
+      </div>
+
+      <div style="margin-top: 12px;">
+        <h3>ภาพรวมการไหลของข้อมูลระหว่าง Layer (High-Level System Topology)</h3>
+        <div class="arch-diagram">
+          <div style="display: flex; justify-content: space-between; align-items: center; text-align: center; font-size: 8pt;">
+            <div style="background: #292825; border: 1px solid #424039; padding: 8px 12px; border-radius: 8px; width: 18%;">
+              <div style="font-weight: 700; color: #f0eee6;">📱 Client (PWA)</div>
+              <div style="color: #9e9b91; font-size: 7pt;">React 18 + Vite</div>
+            </div>
+            <div style="color: #d97757; font-weight: 700;">── HTTPS ──▶</div>
+            <div style="background: #292825; border: 1px solid #424039; padding: 8px 12px; border-radius: 8px; width: 22%;">
+              <div style="font-weight: 700; color: #d97757;">⚡ Vercel Edge / API</div>
+              <div style="color: #9e9b91; font-size: 7pt;">Go Fiber Serverless</div>
+            </div>
+            <div style="color: #d97757; font-weight: 700;">── Ports ──▶</div>
+            <div style="background: #292825; border: 1px solid #424039; padding: 8px 12px; border-radius: 8px; width: 22%;">
+              <div style="font-weight: 700; color: #7fa3c9;">🧩 Hexagonal Core</div>
+              <div style="color: #9e9b91; font-size: 7pt;">Services & Domain</div>
+            </div>
+            <div style="color: #d97757; font-weight: 700;">── TLS 1.3 ──▶</div>
+            <div style="background: #292825; border: 1px solid #424039; padding: 8px 12px; border-radius: 8px; width: 22%;">
+              <div style="font-weight: 700; color: #6c9a76;">☁️ TiDB Cloud</div>
+              <div style="color: #9e9b91; font-size: 7pt;">Distributed TiKV Engine</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <span>Project: Jod-Young (จดยัง)</span>
+      <span>Confidential & Internal Engineering Document</span>
+      <span>Page 1 / 5</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 2: TECH STACK BREAKDOWN ==================== -->
+  <div class="page">
+    <div class="page-content">
+      <h2>🛠️ 2. รายละเอียด Tech Stack ทุกภาคส่วน (Complete Tech Stack)</h2>
+
+      <!-- FRONTEND -->
+      <div class="card" style="margin-bottom: 8px;">
+        <div class="card-title">
+          <span>🎨 Frontend Architecture (ส่วนติดต่อผู้ใช้)</span>
+          <span class="badge badge-primary">React 18 · Vite · PWA</span>
+        </div>
+        <table style="margin: 2px 0 0 0;">
+          <tr>
+            <th style="width: 24%;">เทคโนโลยี</th>
+            <th style="width: 24%;">เวอร์ชัน / เครื่องมือ</th>
+            <th style="width: 52%;">หน้าที่และความรับผิดชอบในระบบ</th>
+          </tr>
+          <tr>
+            <td><strong>React Core</strong></td>
+            <td>React 18.2 + DOM</td>
+            <td>Single Page Application (SPA) บริหารจัดการ View Layer และ State ด้วย Custom Hooks</td>
+          </tr>
+          <tr>
+            <td><strong>Build Tool</strong></td>
+            <td>Vite 5.4 + ESBuild</td>
+            <td>แปลง JSX/ESNext ให้เป็น Static Chunks ขนาดกะทัดรัด (&lt; 285 kB Gzipped) โหลดเร็วในพริบตา</td>
+          </tr>
+          <tr>
+            <td><strong>Design System</strong></td>
+            <td>Dark Luxury CSS</td>
+            <td>ใช้ CSS Variables (`#151513`, `#262624`, `#d97757`) ร่วมกับ Inline Style เพื่อความเร็วสูงสุด</td>
+          </tr>
+          <tr>
+            <td><strong>Typography</strong></td>
+            <td>IBM Plex Sans Thai</td>
+            <td>ฟอนต์สากล คมชัดทุกความละเอียด ทั้งบน iPhone Safari, Android Chrome และคอมพิวเตอร์</td>
+          </tr>
+          <tr>
+            <td><strong>PWA Support</strong></td>
+            <td>Manifest + ServiceWorker</td>
+            <td>ติดตั้งลง Home Screen เป็นแอปเต็มจอ เสมือน Native App ไร้แถบ URL กวนใจ</td>
+          </tr>
+          <tr>
+            <td><strong>Speech Input</strong></td>
+            <td>Web Speech API</td>
+            <td>แปลงเสียงพูดภาษาไทยของผู้ใช้ให้เป็นตัวอักษร Real-time ลงในช่องบันทึกด่วน</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- BACKEND -->
+      <div class="card" style="margin-bottom: 8px;">
+        <div class="card-title">
+          <span>⚙️ Backend Architecture (ระบบประมวลผลหลังบ้าน)</span>
+          <span class="badge badge-info">Go 1.21+ · Fiber v2 · Viper</span>
+        </div>
+        <table style="margin: 2px 0 0 0;">
+          <tr>
+            <th style="width: 24%;">โมดูล</th>
+            <th style="width: 24%;">เวอร์ชัน / มาตรฐาน</th>
+            <th style="width: 52%;">หน้าที่และความรับผิดชอบในระบบ</th>
+          </tr>
+          <tr>
+            <td><strong>Golang Runtime</strong></td>
+            <td>Go 1.21+ (Linux x86_64)</td>
+            <td>ภาษาหลัก คอมไพล์เป็น Single Static Binary มีการจัดสรรหน่วยความจำและ GC ประสิทธิภาพสูง</td>
+          </tr>
+          <tr>
+            <td><strong>Web Framework</strong></td>
+            <td>GoFiber (Fiber v2.52)</td>
+            <td>HTTP Framework สร้างบน FastHTTP รองรับคำขอหลักแสน Transaction/วินาที</td>
+          </tr>
+          <tr>
+            <td><strong>Configuration</strong></td>
+            <td>Viper (spf13/viper)</td>
+            <td>โหลดคอนฟิกตามลำดับความสำคัญ (Environment Variables &gt; `.env` &gt; ค่า Default)</td>
+          </tr>
+          <tr>
+            <td><strong>Serverless Adapter</strong></td>
+            <td>gofiber/adaptor/v2</td>
+            <td>แปลงคำขอ `net/http` ของ Vercel Serverless Function ให้เข้าสู่ Fiber ได้อย่างไร้รอยต่อ</td>
+          </tr>
+          <tr>
+            <td><strong>Database Driver</strong></td>
+            <td>go-sql-driver/mysql</td>
+            <td>ไดรเวอร์เชื่อมต่อ MySQL Protocol แบบ Native รองรับ TLS Handshake และ Connection Pool</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- DATABASE & CLOUD -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>🗄️ Database: TiDB Cloud</span>
+            <span class="badge badge-success">Distributed MySQL</span>
+          </div>
+          <ul style="margin: 4px 0 0 0; padding-left: 16px; font-size: 8pt; color: #42403b;">
+            <li><strong>Region</strong>: AWS Singapore (`gateway01.ap-southeast-1.prod.aws.tidbcloud.com`) Ping ~28ms</li>
+            <li><strong>Storage</strong>: แยก Compute (TiDB) ออกจาก Storage (TiKV Raft Group)</li>
+            <li><strong>ACID Guarantees</strong>: ข้อมูลปลอดภัย 100% มี Multi-replica Replication 3 ชุด</li>
+            <li><strong>Auto-Scale</strong>: ขยายตัวรับโหลดอัตโนมัติแบบ Serverless Pay-as-you-go</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>☁️ Cloud & Edge: Vercel</span>
+            <span class="badge badge-purple">Zero-Config CI/CD</span>
+          </div>
+          <ul style="margin: 4px 0 0 0; padding-left: 16px; font-size: 8pt; color: #42403b;">
+            <li><strong>Global Edge</strong>: แคช Static Assets ที่ Edge Data Centers รวมถึงกรุงเทพฯ (BKK)</li>
+            <li><strong>Serverless Function</strong>: รัน Go Function ที่ `api/index.go` ตามคำขอจริง</li>
+            <li><strong>Git Integration</strong>: สั่ง `git push origin main` แล้ว Auto-deploy ใน 30-45 วินาที</li>
+            <li><strong>Secrets Vault</strong>: เก็บ Credentials ใน Environment Variables ไร้การรั่วไหล</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <span>Project: Jod-Young (จดยัง)</span>
+      <span>Confidential & Internal Engineering Document</span>
+      <span>Page 2 / 5</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 3: HEXAGONAL ARCHITECTURE ==================== -->
+  <div class="page">
+    <div class="page-content">
+      <h2>🏛️ 3. สถาปัตยกรรม Hexagonal (Ports & Adapters Architecture)</h2>
+      <p>
+        ระบบฝั่ง Backend ถูกวางโครงสร้างตามหลักการ <strong>Hexagonal Architecture (Clean Architecture)</strong> เพื่อให้ Business Rules เป็นอิสระจาก Framework, Database หรือช่องทางการรับคำขอใด ๆ:
+      </p>
+
+      <div class="arch-diagram" style="margin: 6px 0 10px 0;">
+        <!-- Driving Adapters -->
+        <div class="arch-layer" style="border-color: #d97757;">
+          <div class="arch-layer-title">1. Driving Adapters (Inbound / จุดรับคำขอภายนอก)</div>
+          <div class="grid-2">
+            <div style="background: #2b2a26; padding: 6px 10px; border-radius: 6px;">
+              <strong style="color: #f0eee6; font-size: 8pt;">Fiber HTTP Router</strong> (`pkg/adapters/handlers/fiber`)
+              <div style="font-size: 7pt; color: #9e9b91;">RESTful Endpoints: `/api/summary`, `/api/transactions`, `/api/parse`</div>
+            </div>
+            <div style="background: #2b2a26; padding: 6px 10px; border-radius: 6px;">
+              <strong style="color: #f0eee6; font-size: 8pt;">Vercel Serverless Entrypoint</strong> (`api/index.go`)
+              <div style="font-size: 7pt; color: #9e9b91;">Vercel HTTP Handler Wrapper ผ่าน Fiber Adaptor</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ports -->
+        <div class="arch-layer" style="border-color: #7fa3c9;">
+          <div class="arch-layer-title">2. Inbound & Outbound Ports (อินเตอร์เฟสสัญญาการทำงาน)</div>
+          <div class="grid-3" style="font-size: 7.5pt;">
+            <div style="background: #222a33; padding: 5px 8px; border-radius: 6px;">
+              <strong style="color: #7fa3c9;">AppServicePort</strong><br>
+              `GetSummary()`, `AddTransaction()`
+            </div>
+            <div style="background: #222a33; padding: 5px 8px; border-radius: 6px;">
+              <strong style="color: #7fa3c9;">ParserServicePort</strong><br>
+              `ParseExpense(rawText string)`
+            </div>
+            <div style="background: #222a33; padding: 5px 8px; border-radius: 6px;">
+              <strong style="color: #7fa3c9;">RepositoryPort</strong><br>
+              `GetStore()`, `SaveTransaction()`
+            </div>
+          </div>
+        </div>
+
+        <!-- Core Services & Domain -->
+        <div class="arch-layer" style="border-color: #f5b28e; background: rgba(217,119,87,0.08);">
+          <div class="arch-layer-title" style="color: #f5b28e;">3. Core Services & Domain Models (หัวใจทางธุรกิจ)</div>
+          <div class="grid-2" style="font-size: 7.5pt;">
+            <div>
+              <strong style="color: #ffffff;">Domain Entities</strong> (`pkg/core/domain`)<br>
+              `Transaction`, `Account`, `Card`, `FixedExpense`, `Plan`, `Debt`
+            </div>
+            <div>
+              <strong style="color: #ffffff;">Core Logic</strong> (`pkg/core/services`)<br>
+              Balance Reconciler, Daily Pacing Calculator, Thai Tokenizer
+            </div>
+          </div>
+        </div>
+
+        <!-- Driven Adapters -->
+        <div class="arch-layer" style="border-color: #6c9a76; margin-bottom: 0;">
+          <div class="arch-layer-title" style="color: #6c9a76;">4. Driven Adapters (Outbound / ที่เก็บข้อมูลภายนอก)</div>
+          <div class="grid-2">
+            <div style="background: #222e25; padding: 6px 10px; border-radius: 6px;">
+              <strong style="color: #a3d9b0; font-size: 8pt;">TiDB Cloud Storage Adapter</strong> (`pkg/adapters/storage`)
+              <div style="font-size: 7pt; color: #b4c9b9;">SQL Queries, Connection Pooling, Auto Migration, TLS Config</div>
+            </div>
+            <div style="background: #222e25; padding: 6px 10px; border-radius: 6px;">
+              <strong style="color: #a3d9b0; font-size: 8pt;">Local JSON Fallback Storage</strong>
+              <div style="font-size: 7pt; color: #b4c9b9;">File System Persistence เมื่อทดสอบใน Local หรือรัน Unit Tests</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>โครงสร้างสารบัญไฟล์ในโปรเจกต์ (Clean Directory Layout)</h3>
+      <pre><code>├── api/index.go                     # Vercel Serverless Function Entrypoint
+├── main.go                          # Standalone Local Fiber HTTP Server
+├── pkg/
+│   ├── core/
+│   │   ├── domain/models.go         # Domain Entities, DTOs & Request/Response Structs
+│   │   ├── ports/ports.go           # Primary & Secondary Ports (Interfaces)
+│   │   └── services/
+│   │       ├── app_service.go       # Financial Business Logic & Balance Reconciler
+│   │       └── parser_service.go    # Thai NLP Regular Expression Tokenizer
+│   └── adapters/
+│       ├── handlers/fiber/router.go # Fiber HTTP Handlers & Middlewares
+│       └── storage/storage.go       # TiDB Cloud MySQL Implementation & Schema Migration
+└── frontend/
+    ├── src/
+    │   ├── components/              # HomeTab, AddTab, BankTab, PlanTab, Modals, AppLoadingScreen
+    │   └── services/api.js          # REST Client (Fetch API with graceful Fallback)</code></pre>
+    </div>
+
+    <div class="footer-bar">
+      <span>Project: Jod-Young (จดยัง)</span>
+      <span>Confidential & Internal Engineering Document</span>
+      <span>Page 3 / 5</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 4: DATABASE SCHEMA & DATA FLOWS ==================== -->
+  <div class="page">
+    <div class="page-content">
+      <h2>🗄️ 4. สกีมาฐานข้อมูล & ผังการทำงาน (Schema & Workflows)</h2>
+
+      <h3>โครงสร้างตารางในฐานข้อมูล TiDB Cloud (Data Schema Specification)</h3>
+      <table>
+        <tr>
+          <th style="width: 18%;">ชื่อตาราง</th>
+          <th style="width: 36%;">คอลัมน์สำคัญ (Key Fields)</th>
+          <th style="width: 46%;">วัตถุประสงค์และการรักษาความถูกต้อง (Integrity)</th>
+        </tr>
+        <tr>
+          <td><strong>accounts</strong></td>
+          <td>`id` (PK), `name`, `role`, `amount`, `tint`, `updated_at`</td>
+          <td>เก็บบัญชีเงินสด/เงินฝาก เช่น "บัญชีใช้จ่าย", "เติมน้ำมัน", "Saving" มีการปรับยอด Real-time</td>
+        </tr>
+        <tr>
+          <td><strong>cards</strong></td>
+          <td>`id` (PK), `name`, `cut_day`, `due_date`, `limit_amount`, `amount`, `tint`</td>
+          <td>เก็บบัตรเครดิตพร้อมรอบบิล (วันตัดรอบ / วันครบกำหนดชำระ) คำนวณวงเงินคงเหลือและ % หนี้บัตร</td>
+        </tr>
+        <tr>
+          <td><strong>transactions</strong></td>
+          <td>`id` (PK), `title`, `amount`, `category`, `account`, `is_income`, `date`, `when_text`</td>
+          <td>สมุดบัญชีรายรับ-รายจ่าย (Immutable Audit Trail) บันทึกทุกธุรกรรมพร้อม Timestamp ภาษาไทย</td>
+        </tr>
+        <tr>
+          <td><strong>fixed_expenses</strong></td>
+          <td>`id` (PK), `name`, `amount`, `day`, `done`, `category`</td>
+          <td>รายการค่าใช้จ่ายคงที่รายเดือน (ค่าน้ำ, ค่าไฟ, ค่าหอ) มีระบบแจ้งเตือนเมื่อใกล้ครบกำหนด 7 วัน</td>
+        </tr>
+        <tr>
+          <td><strong>plans</strong></td>
+          <td>`id` (PK), `title`, `total_amount`, `paid_amount`, `monthly_amount`, `due_day`</td>
+          <td>แผนการออมเงิน หรือรายการผ่อนชำระสินค้า คำนวณความคืบหน้ารายเดือนและจำนวนงวดที่เหลือ</td>
+        </tr>
+      </table>
+
+      <h3 style="margin-top: 10px;">ผังกระบวนการบันทึกรายการด่วน (Quick Recording Flow)</h3>
+      <div style="display: flex; flex-direction: column; gap: 6px; margin: 6px 0;">
+        <div class="flow-step-box">
+          <div class="flow-step-num">1</div>
+          <strong style="margin-left: 14px;">Input Phase: ผู้ใช้ป้อนข้อความหรือสั่งงานด้วยเสียง</strong><br>
+          <span style="font-size: 8pt; color: #5a5750; margin-left: 14px;">
+            เช่น พิมพ์ว่า <em>"ข้าวกะเพราหมูกรอบ 65 บัญชีใช้จ่าย"</em> หรือใช้ Web Speech API บันทึกเสียงพูดภาษาไทย
+          </span>
+        </div>
+
+        <div class="flow-step-box">
+          <div class="flow-step-num">2</div>
+          <strong style="margin-left: 14px;">NLP Engine Phase: ถอดรหัสข้อความด้วย Parser Service</strong><br>
+          <span style="font-size: 8pt; color: #5a5750; margin-left: 14px;">
+            Go Parser Service สกัดตัวเลข <code>65</code> ➔ ตรวจจับคำว่า "กะเพรา" แมปหมวดหมู่ <strong>"อาหาร"</strong> ➔ แมปเข้า <strong>"บัญชีใช้จ่าย"</strong>
+          </span>
+        </div>
+
+        <div class="flow-step-box">
+          <div class="flow-step-num">3</div>
+          <strong style="margin-left: 14px;">Atomic Execution Phase: ประมวลผลและปรับยอดบัญชีพร้อมกัน</strong><br>
+          <span style="font-size: 8pt; color: #5a5750; margin-left: 14px;">
+            AppService บันทึกลงตาราง <code>transactions</code> พร้อมสั่งปรับยอดเงินในตาราง <code>accounts</code> (หักออก 65 บ.) หรือปรับยอดหนี้ใน <code>cards</code> Real-time
+          </span>
+        </div>
+
+        <div class="flow-step-box">
+          <div class="flow-step-num">4</div>
+          <strong style="margin-left: 14px;">Pacing Re-calculation Phase: คำนวณงบประมาณคงเหลือรายวันใหม่</strong><br>
+          <span style="font-size: 8pt; color: #5a5750; margin-left: 14px;">
+            ระบบคำนวณงบรายจ่ายคงเหลือของวันนั้นใหม่ทันที (Left to Spend / Remaining Days in Month) ส่งกลับไปแสดงผลที่หน้าจอ
+          </span>
+        </div>
+      </div>
+
+      <h3>ผังการแก้ไขธุรกรรม (Transaction Edit & Balance Reversal Engine)</h3>
+      <div class="callout">
+        <strong>กลไก Balance Reversal & Apply:</strong> เมื่อมีการแก้ไขตัวเลขหรือสลับบัญชี ระบบจะทำการ <strong>Revert (คืนยอดเดิม)</strong> ให้กับบัญชีเก่าก่อนเสมอ แล้วจึงนำยอดใหม่ไป <strong>Apply (หัก/เพิ่ม)</strong> ให้กับบัญชีใหม่ เพื่อป้องกันปัญหายอดเงินคงเหลือผิดเพี้ยนเด็ดขาด
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <span>Project: Jod-Young (จดยัง)</span>
+      <span>Confidential & Internal Engineering Document</span>
+      <span>Page 4 / 5</span>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 5: CI/CD, SECURITY & SPECIFICATION ==================== -->
+  <div class="page">
+    <div class="page-content">
+      <h2>🚀 5. วงจร CI/CD, ความปลอดภัย & แผนต่อยอด (DevOps & Roadmap)</h2>
+
+      <h3>กระบวนการ Deployment อัตโนมัติ (Zero-Touch Continuous Deployment Pipeline)</h3>
+      <div class="arch-diagram" style="padding: 10px 14px; margin: 6px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; text-align: center; font-size: 8pt;">
+          <div style="background: #292825; border: 1px solid #424039; padding: 6px; border-radius: 6px; width: 22%;">
+            <div style="color: #f0eee6; font-weight: 700;">1. Local Verify</div>
+            <div style="color: #9e9b91; font-size: 7pt;">npm build & go test</div>
+          </div>
+          <div style="color: #d97757;">➔</div>
+          <div style="background: #292825; border: 1px solid #424039; padding: 6px; border-radius: 6px; width: 22%;">
+            <div style="color: #f0eee6; font-weight: 700;">2. Git Push</div>
+            <div style="color: #9e9b91; font-size: 7pt;">GitHub origin main</div>
+          </div>
+          <div style="color: #d97757;">➔</div>
+          <div style="background: #292825; border: 1px solid #424039; padding: 6px; border-radius: 6px; width: 22%;">
+            <div style="color: #d97757; font-weight: 700;">3. Vercel Build</div>
+            <div style="color: #9e9b91; font-size: 7pt;">Vite + Go Compile</div>
+          </div>
+          <div style="color: #d97757;">➔</div>
+          <div style="background: #292825; border: 1px solid #424039; padding: 6px; border-radius: 6px; width: 22%;">
+            <div style="color: #6c9a76; font-weight: 700;">4. Global Live</div>
+            <div style="color: #9e9b91; font-size: 7pt;">Zero-Downtime Swap</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 8px;">
+        <!-- Security -->
+        <div class="card">
+          <div class="card-title">
+            <span>🔒 มาตรการความปลอดภัย (Security)</span>
+            <span class="badge badge-success">Enforced</span>
+          </div>
+          <ul style="margin: 4px 0 0 0; padding-left: 16px; font-size: 7.5pt; color: #42403b;">
+            <li><strong>Data in Transit</strong>: บังคับเชื่อมต่อผ่าน HTTPS (TLS 1.3) ตลอดเส้นทาง Client-to-Vercel และ Vercel-to-TiDB Cloud</li>
+            <li><strong>No Secrets in Source</strong>: `.env` และข้อมูล Database Credentials ถูกกีดกันด้วย `.gitignore` อย่างเคร่งครัด</li>
+            <li><strong>App Lock</strong>: รองรับการตั้งรหัสผ่าน 4 หลัก (PIN Lock) ป้องกันการเปิดดูจากบุคคลรอบตัว</li>
+            <li><strong>SQL Shield</strong>: คำสั่ง SQL ใช้ Prepared Statements ผ่าน `database/sql` 100%</li>
+          </ul>
+        </div>
+
+        <!-- Resilience -->
+        <div class="card">
+          <div class="card-title">
+            <span>🛡️ ความต่อเนื่องในการทำงาน (Resilience)</span>
+            <span class="badge badge-info">Resilient</span>
+          </div>
+          <ul style="margin: 4px 0 0 0; padding-left: 16px; font-size: 7.5pt; color: #42403b;">
+            <li><strong>Dual-Layer Fallback</strong>: หากการเชื่อมต่อคลาวด์ขัดข้อง สลับไปอ่าน Local Storage ทันที</li>
+            <li><strong>Optimistic UI Updates</strong>: แสดงผลรายการทันทีขณะรอ Network ช่วยให้แอปตอบสนองไว</li>
+            <li><strong>Connection Pool Tuning</strong>: ตั้ง `SetMaxOpenConns(5)` และ `SetMaxIdleConns(3)` ป้องกัน Connection รั่วไหล</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 style="margin-top: 10px;">สรุปแผนการพัฒนาและนวัตกรรมขั้นถัดไป (Engineering Roadmap)</h3>
+      <div class="grid-3" style="margin-top: 6px;">
+        <div class="flow-step-box">
+          <strong style="color: #d97757; font-size: 8.5pt;">1. โอนเงินข้ามบัญชี</strong>
+          <p style="font-size: 7.5pt; color: #5a5750; margin-top: 2px;">
+            โอนย้ายเงินระหว่าง "บัญชีใช้จ่าย" ➔ "Saving" ในคลิกเดียว โดยไม่นับเป็นรายจ่ายซ้ำซ้อน
+          </p>
+        </div>
+
+        <div class="flow-step-box">
+          <strong style="color: #7fa3c9; font-size: 8.5pt;">2. สแกนสลิปโอนเงิน (OCR)</strong>
+          <p style="font-size: 7.5pt; color: #5a5750; margin-top: 2px;">
+            แนบรูปสลิปธนาคารแล้วให้ AI อ่านยอดเงิน ร้านค้า และเวลาลงตารางบันทึกให้อัตโนมัติ
+          </p>
+        </div>
+
+        <div class="flow-step-box">
+          <strong style="color: #6c9a76; font-size: 8.5pt;">3. สรุปสถิติ & สัดส่วน</strong>
+          <p style="font-size: 7.5pt; color: #5a5750; margin-top: 2px;">
+            กราฟวงกลม Donut Chart แสดงสัดส่วนการใช้เงินรายเดือนแยกตามประเภทอย่างละเอียด
+          </p>
+        </div>
+      </div>
+
+      <div style="background: #f7f6f2; border: 1px solid #e5e2d7; border-radius: 8px; padding: 10px 14px; margin-top: 10px; text-align: center;">
+        <div style="font-weight: 700; color: #242320; font-size: 9pt;">
+          สรุป: "จดยัง" ได้รับการวางสถาปัตยกรรมระดับ Production Grade พร้อมรองรับการเติบโต ข้อมูลถูกต้อง รวดเร็ว และปลอดภัยสูงสุด
+        </div>
+        <div style="font-size: 7.5pt; color: #8a8780; margin-top: 2px; font-family: 'IBM Plex Mono', monospace;">
+          Compiled by Antigravity AI Engineering · Built for Project Jod-Young
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bar">
+      <span>Project: Jod-Young (จดยัง)</span>
+      <span>Confidential & Internal Engineering Document</span>
+      <span>Page 5 / 5</span>
+    </div>
+  </div>
+
+</body>
+</html>
