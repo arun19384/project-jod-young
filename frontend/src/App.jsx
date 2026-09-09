@@ -530,16 +530,13 @@ export default function App() {
   const content = (
     <div
       style={{
-        position: isRealMobile ? 'absolute' : 'relative',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        position: 'relative',
         width: '100%',
         maxWidth: isRealMobile ? '100%' : isMobileFrame ? '390px' : '640px',
         height: isRealMobile ? '100%' : isMobileFrame ? '844px' : '90vh',
         maxHeight: isRealMobile ? '100%' : isMobileFrame ? '844px' : '90vh',
-        flex: isRealMobile ? '1' : 'none',
+        flex: isRealMobile ? '1 1 0%' : 'none',
+        minHeight: 0,
         borderRadius: isRealMobile ? '0px' : isMobileFrame ? '46px' : '24px',
         background: '#262624',
         border: isRealMobile ? 'none' : '1px solid #3a3936',
@@ -555,17 +552,21 @@ export default function App() {
         zIndex: 10,
       }}
     >
-      {/* Mobile Top Status Bar */}
+      {/* Mobile Top Status Bar with Dynamic Safe Area */}
       <div
         style={{
           flex: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: isRealMobile ? '70px' : isMobileFrame ? '18px' : '14px',
+          paddingTop: isRealMobile
+            ? 'max(env(safe-area-inset-top, 0px), 14px)'
+            : isMobileFrame
+            ? '18px'
+            : '14px',
           paddingBottom: '10px',
-          paddingLeft: '18px',
-          paddingRight: '18px',
+          paddingLeft: 'max(env(safe-area-inset-left, 0px), 18px)',
+          paddingRight: 'max(env(safe-area-inset-right, 0px), 18px)',
           background: '#262624',
           borderBottom: '1px solid #2f2e2b',
           zIndex: 50,
@@ -686,7 +687,8 @@ export default function App() {
           overflowY: 'auto',
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
-          paddingBottom: '24px',
+          overscrollBehaviorY: 'contain',
+          paddingBottom: '16px',
         }}
       >
         {tab === 'home' && (
@@ -761,9 +763,9 @@ export default function App() {
           borderTop: '1px solid #34332f',
           background: '#262624',
           paddingTop: '8px',
-          paddingLeft: '12px',
-          paddingRight: '12px',
-          paddingBottom: isRealMobile ? 'max(env(safe-area-inset-bottom, 34px), 34px)' : '10px',
+          paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
+          paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
+          paddingBottom: isRealMobile ? 'max(env(safe-area-inset-bottom, 0px), 14px)' : '10px',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '4px',
@@ -775,7 +777,7 @@ export default function App() {
           style={{
             position: 'absolute',
             top: '8px',
-            bottom: isRealMobile ? 'max(env(safe-area-inset-bottom, 34px), 34px)' : '10px',
+            bottom: isRealMobile ? 'max(env(safe-area-inset-bottom, 0px), 14px)' : '10px',
             left: '12px',
             width: 'calc((100% - 24px - 12px) / 4)',
             background: 'rgba(217, 119, 87, 0.16)',
@@ -842,8 +844,10 @@ export default function App() {
   return (
     <div
       style={{
-        height: isRealMobile ? '100%' : 'auto',
-        minHeight: isRealMobile ? '100%' : '100vh',
+        width: '100%',
+        height: isRealMobile ? '100dvh' : 'auto',
+        minHeight: isRealMobile ? '100dvh' : '100vh',
+        maxHeight: isRealMobile ? '100dvh' : 'none',
         background: isRealMobile ? '#262624' : '#191917',
         fontFamily: "'IBM Plex Sans Thai', system-ui, sans-serif",
         display: 'flex',
@@ -851,8 +855,7 @@ export default function App() {
         alignItems: 'center',
         gap: isRealMobile ? '0px' : '18px',
         padding: isRealMobile ? '0px' : '36px 20px 56px',
-        width: '100%',
-        overflow: isRealMobile ? 'hidden' : 'visible',
+        overflow: 'hidden',
       }}
     >
       {/* iOS PWA Install Guide Banner */}

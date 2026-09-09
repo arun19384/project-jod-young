@@ -1221,23 +1221,13 @@ export default function HomeTab({
   };
 
   return (
-    <div style={{ padding: '6px 20px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* Month Header with App Logo, Date & Reorder Button */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-          <img
-            src="/app-logo.png"
-            alt="จดยัง"
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '12px',
-              border: '1.5px solid #3a3936',
-              objectFit: 'cover',
-            }}
-          />
+    <div style={{ padding: '6px 18px 28px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      {/* Month Header with Date & Reorder Button */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '18px' }}>🗓️</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-            <div style={{ font: "600 16px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>กันยายน</div>
+            <div style={{ font: "600 15px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>กันยายน</div>
             <div style={{ font: "400 11px/1.2 'IBM Plex Sans Thai'", color: '#8a8780' }}>
               วันที่ 9 · เหลือ 21 วัน
             </div>
