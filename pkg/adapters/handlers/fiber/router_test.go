@@ -168,8 +168,12 @@ func TestHexagonalFiberAPI(t *testing.T) {
 		t.Errorf("Expected spending 250 without double-counting card payment, got %f", summary.MonthlySpent)
 	}
 	previousMonth := time.Now().AddDate(0, -1, 0).Format("2006-01-02")
-	if _, err := appService.AddTransaction(domain.AddTransactionRequest{Name: "old expense", Category: "อื่นๆ", Amount: 50, Account: "บัญชีใช้จ่าย", Date: previousMonth}); err != nil {
+	oldTx, err := appService.AddTransaction(domain.AddTransactionRequest{Name: "old expense", Category: "อื่นๆ", Amount: 50, Account: "บัญชีใช้จ่าย", Date: previousMonth, When: "วันนี้ · 09:30 น."})
+	if err != nil {
 		t.Fatalf("Historical transaction failed: %v", err)
+	}
+	if oldTx.IsToday || oldTx.When == "วันนี้ · 09:30 น." {
+		t.Errorf("Expected historical transaction to keep real date, got today=%v when=%q", oldTx.IsToday, oldTx.When)
 	}
 	if got := appService.GetSummary().MonthlySpent; got != 250 {
 		t.Errorf("Expected current-month spending 250, got %f", got)

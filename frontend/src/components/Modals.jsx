@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { displayTransactionWhen, isSystemTransaction, toDateInputValue } from '../utils/transactionDate.js';
+import { displayTransactionWhen, isSystemTransaction, toDateInputValue, todayDateInputValue } from '../utils/transactionDate.js';
 
 const modalOverlayStyle = {
   position: 'fixed',
@@ -722,6 +722,10 @@ export function EditTransactionModal({
       (!account.trim() || account.trim() === 'บัญชีหลัก' || account.trim() === 'Main')
         ? 'บัญชีใช้จ่าย'
         : account.trim();
+    const fallbackNow = new Date();
+    const fallbackTime = `${String(fallbackNow.getHours()).padStart(2, '0')}:${String(fallbackNow.getMinutes()).padStart(2, '0')} น.`;
+    const existingTime = String(tx.when || '').match(/(\d{1,2}:\d{2}(?:\s*น\.)?)/)?.[1] || fallbackTime;
+    const finalWhen = transactionDate === todayDateInputValue() ? `วันนี้ · ${existingTime}` : `${transactionDate} · ${existingTime}`;
 
     const ok = await onSave(tx.id, {
       t: finalTitle,
@@ -731,6 +735,7 @@ export function EditTransactionModal({
       acct: finalAccount,
       income: isIncome,
       date: transactionDate,
+      when: finalWhen,
     });
     if (ok !== false) onClose();
   };
@@ -860,7 +865,7 @@ export function EditTransactionModal({
         {/* Category Selector Pills */}
         <div>
           <label style={labelStyle}>วันที่ทำรายการ</label>
-          <input type="date" value={transactionDate} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setTransactionDate(e.target.value)} style={inputStyle} />
+          <input type="date" value={transactionDate} max={todayDateInputValue()} onChange={(e) => setTransactionDate(e.target.value)} style={inputStyle} />
         </div>
 
         {/* Category Selector Pills */}
@@ -1049,7 +1054,7 @@ export function SettingsModal({ transactions = [], onReset, onClose, onPinConfig
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `jod-all-transactions-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `jod-all-transactions-${todayDateInputValue()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { displayTransactionWhen, isSystemTransaction } from '../utils/transactionDate.js';
+import { displayTransactionWhen, isSystemTransaction, todayDateInputValue } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -76,7 +76,7 @@ export default function SearchModal({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `jod-search-export-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `jod-search-export-${todayDateInputValue()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

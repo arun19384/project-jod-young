@@ -4,6 +4,7 @@ import (
 	"ai-in-my-area-backend/pkg/core/domain"
 	"ai-in-my-area-backend/pkg/core/ports"
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -68,6 +69,9 @@ func (s *AppService) AddTransaction(req domain.AddTransactionRequest) (domain.Tr
 	whenStr := req.When
 	if whenStr == "" {
 		whenStr = "วันนี้ · " + nowBkk.Format("15:04 น.")
+	}
+	if dateStr != nowBkk.Format("2006-01-02") && strings.HasPrefix(strings.TrimSpace(whenStr), "วันนี้") {
+		whenStr = strings.Replace(strings.TrimSpace(whenStr), "วันนี้", dateStr, 1)
 	}
 
 	tx := domain.Transaction{
