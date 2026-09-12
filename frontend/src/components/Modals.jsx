@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { displayTransactionWhen } from '../utils/transactionDate.js';
 
 const modalOverlayStyle = {
   position: 'fixed',
@@ -1999,7 +2000,7 @@ export function WalletTransactionsModal({
                         {tx.t}
                       </div>
                       <div style={{ font: "400 11px 'IBM Plex Sans Thai'", color: '#78756e', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <span>{tx.when || tx.date || 'วันนี้'}</span>
+                        <span>{displayTransactionWhen(tx)}</span>
                         {tx.isStatementLine && (
                           <span style={{ fontSize: '9.5px', color: '#9b8ec4', background: 'rgba(155,142,196,0.12)', padding: '1px 5px', borderRadius: '4px' }}>
                             📋 Statement บัตร
@@ -2104,4 +2105,3 @@ export function WalletTransactionsModal({
     </div>
   );
 }
-

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { displayTransactionWhen } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -333,7 +334,7 @@ export default function SearchModal({
                     {t.t}
                   </div>
                   <div style={{ font: "400 11px/1.3 'IBM Plex Sans Thai'", color: '#78756e' }}>
-                    {t.c} · {t.acct} · {t.when}
+                    {t.c} · {t.acct} · {displayTransactionWhen(t)}
                   </div>
                 </div>
 

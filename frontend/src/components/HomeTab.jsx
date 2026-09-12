@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import AnalyticsChart from './AnalyticsChart.jsx';
 import { ReceiptPreviewModal, WalletTransactionsModal } from './Modals.jsx';
 import { getDaysUntilDue } from './BankTab.jsx';
+import { displayTransactionWhen } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -1136,7 +1137,7 @@ export default function HomeTab({
                   {e.t}
                 </div>
                 <div style={{ font: "400 11px/1.3 'IBM Plex Sans Thai'", color: '#78756e' }}>
-                  {e.c} · {e.acct} · {e.when}
+                  {e.c} · {e.acct} · {displayTransactionWhen(e)}
                 </div>
               </div>
               {e.receipt && (

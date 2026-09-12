@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ReceiptPreviewModal } from './Modals.jsx';
+import { displayTransactionWhen, isTransactionToday } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -307,7 +308,7 @@ export default function AddTab({
     'อื่นๆ 100',
   ];
 
-  const todayList = transactions.filter((e) => e.today);
+  const todayList = transactions.filter(isTransactionToday);
   const todayTotal = todayList
     .filter((e) => !e.income)
     .reduce((acc, e) => acc + e.a, 0);
@@ -740,7 +741,7 @@ export default function AddTab({
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '1px' }}>
                   <div style={{ font: "400 13.5px/1.3 'IBM Plex Sans Thai'", color: '#e8e5da' }}>{e.t}</div>
                   <div style={{ font: "400 11px/1.3 'IBM Plex Sans Thai'", color: '#78756e' }}>
-                    {e.c} · {e.acct} · {e.when}
+                    {e.c} · {e.acct} · {displayTransactionWhen(e)}
                   </div>
                 </div>
                 {e.receipt && (
