@@ -7,6 +7,12 @@ function request(url, options = {}) {
   return fetch(url, { ...options, headers });
 }
 
+export async function fetchBootstrap() {
+  const res = await request(`${API_BASE}/bootstrap`);
+  if (!res.ok) throw new Error('Failed to fetch bootstrap data');
+  return res.json();
+}
+
 export async function fetchSummary() {
   const res = await request(`${API_BASE}/summary`);
   if (!res.ok) throw new Error('Failed to fetch summary');

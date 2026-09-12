@@ -60,6 +60,26 @@ func (h *FiberHandler) GetSummary(c *fiber.Ctx) error {
 	return c.JSON(summary)
 }
 
+// GetBootstrap returns all data needed for the initial dashboard in one request.
+// This avoids four independent serverless/DB round trips during page load.
+func (h *FiberHandler) GetBootstrap(c *fiber.Ctx) error {
+	accounts, cards, fixed, bankTotal := h.appUseCase.GetAccounts()
+	monthly, remaining, plans := h.appUseCase.GetPlans()
+	return c.JSON(fiber.Map{
+		"summary":      h.appUseCase.GetSummary(),
+		"transactions": h.appUseCase.GetTransactions(),
+		"accounts":     accounts,
+		"cards":        cards,
+		"fixed":        fixed,
+		"bankTotal":    bankTotal,
+		"plans": fiber.Map{
+			"monthlyTotal":   monthly,
+			"remainingTotal": remaining,
+			"plans":          plans,
+		},
+	})
+}
+
 func (h *FiberHandler) GetTransactions(c *fiber.Ctx) error {
 	txs := h.appUseCase.GetTransactions()
 	return c.JSON(txs)

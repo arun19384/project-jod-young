@@ -22,8 +22,7 @@ import {
 import LoadingPopup from './components/LoadingPopup.jsx';
 import AppLoadingScreen from './components/AppLoadingScreen.jsx';
 import {
-  fetchSummary,
-  fetchTransactions,
+  fetchBootstrap,
   addTransaction,
   updateTransaction,
   deleteTransaction,
@@ -31,7 +30,6 @@ import {
   addDebt,
   toggleDebt,
   deleteDebt,
-  fetchAccounts,
   addAccount,
   deleteAccount,
   updateAccount,
@@ -42,7 +40,6 @@ import {
   toggleFixed,
   addFixed,
   deleteFixed,
-  fetchPlans,
   addPlan,
   payPlan,
   deletePlan,
@@ -321,16 +318,16 @@ export default function App() {
 
   const loadData = async () => {
     try {
-      const [sum, txs, accts, plans] = await Promise.all([
-        fetchSummary(),
-        fetchTransactions(),
-        fetchAccounts(),
-        fetchPlans(),
-      ]);
-      setSummary(sum);
-      setTransactions(txs);
-      setAccountsData(accts);
-      setPlansData(plans);
+      const data = await fetchBootstrap();
+      setSummary(data.summary);
+      setTransactions(data.transactions);
+      setAccountsData({
+        accounts: data.accounts,
+        cards: data.cards,
+        fixed: data.fixed,
+        bankTotal: data.bankTotal,
+      });
+      setPlansData(data.plans);
       setBackendOnline(true);
     } catch (err) {
       console.warn('API Error or connecting to local Go backend:', err);

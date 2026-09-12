@@ -69,6 +69,7 @@ npm.cmd run dev
 |---|---|---|
 | `GET` | `/api/health` | ตรวจสอบสถานะ Server |
 | `GET` | `/api/summary` | ดึงข้อมูลสรุปหน้าแรก (เหลือใช้, ใช้ไป, ค่าคงที่, ผ่อน, Dues, Debts, Recent) |
+| `GET` | `/api/bootstrap` | ดึงข้อมูลเริ่มต้นของหน้าเว็บทั้งหมดใน request เดียว เพื่อลดเวลาโหลด |
 | `GET` | `/api/transactions` | ดึงประวัติรายการธุรกรรมทั้งหมด |
 | `POST` | `/api/transactions` | เพิ่มรายการใหม่ (รองรับทั้งส่ง text ดิบให้ตัดคำ หรือแยกฟิลด์) |
 | `DELETE` | `/api/transactions/{id}` | ลบรายการธุรกรรม |

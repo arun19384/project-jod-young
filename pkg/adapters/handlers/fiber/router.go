@@ -60,6 +60,7 @@ func NewFiberRouter(appUseCase ports.AppUseCase, parserUseCase ports.ParserUseCa
 
 	// Dashboard & Summary
 	api.Get("/summary", h.GetSummary)
+	api.Get("/bootstrap", h.GetBootstrap)
 
 	// Transactions
 	api.Get("/transactions", h.GetTransactions)
