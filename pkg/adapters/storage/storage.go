@@ -780,13 +780,24 @@ func (r *StorageRepository) AddAccount(acc domain.BankAccount) domain.BankAccoun
 func (r *StorageRepository) UpdateAccount(id string, acc domain.BankAccount) (domain.BankAccount, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.isMySQL && r.sqlDB != nil {
+		res, err := r.sqlDB.Exec("UPDATE accounts SET amount = ?, name = COALESCE(NULLIF(?, ''), name), role = COALESCE(NULLIF(?, ''), role), tint = COALESCE(NULLIF(?, ''), tint) WHERE id = ?", acc.Amount, acc.Name, acc.Role, acc.Tint, id)
+		if err != nil {
+			return domain.BankAccount{}, fmt.Errorf("update account: %w", err)
+		}
+		changed, err := res.RowsAffected()
+		if err != nil || changed == 0 {
+			return domain.BankAccount{}, fmt.Errorf("account not found")
+		}
+		var updated domain.BankAccount
+		if err := r.sqlDB.QueryRow("SELECT id, name, role, amount, tint FROM accounts WHERE id = ?", id).Scan(&updated.ID, &updated.Name, &updated.Role, &updated.Amount, &updated.Tint); err != nil {
+			return domain.BankAccount{}, fmt.Errorf("read updated account: %w", err)
+		}
+		return updated, nil
+	}
 	updated, err := r.localStore.UpdateAccount(id, acc)
 	if err != nil {
 		return domain.BankAccount{}, err
-	}
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = ?, name = COALESCE(NULLIF(?, ''), name), role = COALESCE(NULLIF(?, ''), role) WHERE id = ?",
-			updated.Amount, updated.Name, updated.Role, id)
 	}
 	return updated, nil
 }
@@ -794,10 +805,15 @@ func (r *StorageRepository) UpdateAccount(id string, acc domain.BankAccount) (do
 func (r *StorageRepository) DeleteAccount(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	ok := r.localStore.DeleteAccount(id)
 	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("DELETE FROM accounts WHERE id = ?", id)
+		res, err := r.sqlDB.Exec("DELETE FROM accounts WHERE id = ?", id)
+		if err != nil {
+			return false
+		}
+		changed, err := res.RowsAffected()
+		return err == nil && changed > 0
 	}
+	ok := r.localStore.DeleteAccount(id)
 	return ok
 }
 
