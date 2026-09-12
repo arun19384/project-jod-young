@@ -96,27 +96,20 @@ export default function HomeTab({
     handleSaveSectionOrder(next);
   };
 
-  if (!summary) {
-    return (
-      <div style={{ padding: '40px 22px', textAlign: 'center', color: '#8a8780' }}>
-        กำลังโหลดข้อมูลสรุป...
-      </div>
-    );
-  }
-
-  const income = summary.income || 45000;
-  const spent = summary.spent || 0;
-  const left = summary.left || 0;
-  const spentPct = summary.spentPct || 0;
-  const fixedTotal = summary.fixedTotal || 0;
-  const fixedDone = summary.fixedDone || 0;
-  const fixedTotalCount = summary.fixedTotalCount || 0;
-  const planMonthly = summary.planMonthly || 0;
-  const planCount = summary.planCount || 0;
-  const dues = summary.dues || [];
-  const debts = summary.debts || [];
-  const debtTotal = summary.debtTotal || 0;
-  const recent = summary.recent || [];
+  const safeSummary = summary || {};
+  const income = safeSummary.income || 45000;
+  const spent = safeSummary.spent || 0;
+  const left = safeSummary.left || 0;
+  const spentPct = safeSummary.spentPct || 0;
+  const fixedTotal = safeSummary.fixedTotal || 0;
+  const fixedDone = safeSummary.fixedDone || 0;
+  const fixedTotalCount = safeSummary.fixedTotalCount || 0;
+  const planMonthly = safeSummary.planMonthly || 0;
+  const planCount = safeSummary.planCount || 0;
+  const dues = safeSummary.dues || [];
+  const debts = safeSummary.debts || [];
+  const debtTotal = safeSummary.debtTotal || 0;
+  const recent = safeSummary.recent || [];
   const now = new Date();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const monthLabel = now.toLocaleDateString('th-TH', { month: 'long' });
