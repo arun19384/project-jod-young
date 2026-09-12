@@ -77,6 +77,7 @@ func NewViperConfigAdapter() ports.ConfigPort {
 			ConfigPath:   configPath,
 			AllowOrigins: v.GetString("ALLOW_ORIGINS"),
 			Environment:  v.GetString("ENV"),
+			APIKey:       v.GetString("API_KEY"),
 		},
 	}
 

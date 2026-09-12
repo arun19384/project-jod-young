@@ -29,7 +29,7 @@ func NewStorageRepository(cfg domain.AppConfig) ports.RepositoryPort {
 	// Register TLS for TiDB Cloud
 	_ = mysql.RegisterTLSConfig("tidbtls", &tls.Config{
 		ServerName:         "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-		InsecureSkipVerify: true,
+		MinVersion:         tls.VersionTLS12,
 	})
 
 	repo := &StorageRepository{

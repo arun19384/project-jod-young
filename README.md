@@ -57,6 +57,10 @@ npm.cmd run dev
 # เข้าใช้งานหน้าเว็บที่ http://localhost:5173
 ```
 
+### ความปลอดภัยสำหรับ Production
+
+กำหนด `API_KEY` ใน Vercel และกำหนดค่าเดียวกันเป็น `VITE_API_KEY` ตอน build frontend เพื่อป้องกัน API ทุก endpoint ด้วย header `X-API-Key` หากไม่กำหนด ระบบจะเปิดโหมด local compatibility และไม่บังคับ token
+
 ---
 
 ## รายการ API Endpoints (Backend)

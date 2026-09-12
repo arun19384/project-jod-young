@@ -1,19 +1,26 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_KEY = import.meta.env.VITE_API_KEY || '';
+
+function request(url, options = {}) {
+  const headers = new Headers(options.headers || {});
+  if (API_KEY) headers.set('X-API-Key', API_KEY);
+  return fetch(url, { ...options, headers });
+}
 
 export async function fetchSummary() {
-  const res = await fetch(`${API_BASE}/summary`);
+  const res = await request(`${API_BASE}/summary`);
   if (!res.ok) throw new Error('Failed to fetch summary');
   return res.json();
 }
 
 export async function fetchTransactions() {
-  const res = await fetch(`${API_BASE}/transactions`);
+  const res = await request(`${API_BASE}/transactions`);
   if (!res.ok) throw new Error('Failed to fetch transactions');
   return res.json();
 }
 
 export async function addTransaction(payload) {
-  const res = await fetch(`${API_BASE}/transactions`, {
+  const res = await request(`${API_BASE}/transactions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -23,7 +30,7 @@ export async function addTransaction(payload) {
 }
 
 export async function updateTransaction(id, payload) {
-  const res = await fetch(`${API_BASE}/transactions/${id}`, {
+  const res = await request(`${API_BASE}/transactions/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -33,7 +40,7 @@ export async function updateTransaction(id, payload) {
 }
 
 export async function deleteTransaction(id) {
-  const res = await fetch(`${API_BASE}/transactions/${id}`, {
+  const res = await request(`${API_BASE}/transactions/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete transaction');
@@ -41,13 +48,13 @@ export async function deleteTransaction(id) {
 }
 
 export async function fetchDebts() {
-  const res = await fetch(`${API_BASE}/debts`);
+  const res = await request(`${API_BASE}/debts`);
   if (!res.ok) throw new Error('Failed to fetch debts');
   return res.json();
 }
 
 export async function addDebt(payload) {
-  const res = await fetch(`${API_BASE}/debts`, {
+  const res = await request(`${API_BASE}/debts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -57,7 +64,7 @@ export async function addDebt(payload) {
 }
 
 export async function toggleDebt(id) {
-  const res = await fetch(`${API_BASE}/debts/${id}`, {
+  const res = await request(`${API_BASE}/debts/${id}`, {
     method: 'PUT',
   });
   if (!res.ok) throw new Error('Failed to toggle debt');
@@ -65,7 +72,7 @@ export async function toggleDebt(id) {
 }
 
 export async function deleteDebt(id) {
-  const res = await fetch(`${API_BASE}/debts/${id}`, {
+  const res = await request(`${API_BASE}/debts/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete debt');
@@ -73,13 +80,13 @@ export async function deleteDebt(id) {
 }
 
 export async function fetchAccounts() {
-  const res = await fetch(`${API_BASE}/accounts`);
+  const res = await request(`${API_BASE}/accounts`);
   if (!res.ok) throw new Error('Failed to fetch accounts');
   return res.json();
 }
 
 export async function addAccount(payload) {
-  const res = await fetch(`${API_BASE}/accounts`, {
+  const res = await request(`${API_BASE}/accounts`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -89,7 +96,7 @@ export async function addAccount(payload) {
 }
 
 export async function deleteAccount(id) {
-  const res = await fetch(`${API_BASE}/accounts/${id}`, {
+  const res = await request(`${API_BASE}/accounts/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete account');
@@ -97,7 +104,7 @@ export async function deleteAccount(id) {
 }
 
 export async function updateAccount(id, payload) {
-  const res = await fetch(`${API_BASE}/accounts/${id}`, {
+  const res = await request(`${API_BASE}/accounts/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -107,7 +114,7 @@ export async function updateAccount(id, payload) {
 }
 
 export async function transferAccount(fromId, toId, amount, note = '') {
-  const res = await fetch(`${API_BASE}/accounts/transfer`, {
+  const res = await request(`${API_BASE}/accounts/transfer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ from_id: fromId, to_id: toId, amount: parseFloat(amount), note }),
@@ -120,7 +127,7 @@ export async function transferAccount(fromId, toId, amount, note = '') {
 }
 
 export async function addCard(payload) {
-  const res = await fetch(`${API_BASE}/cards`, {
+  const res = await request(`${API_BASE}/cards`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -130,7 +137,7 @@ export async function addCard(payload) {
 }
 
 export async function payCard(cardId, fromAccountId, amount) {
-  const res = await fetch(`${API_BASE}/cards/${cardId}/pay`, {
+  const res = await request(`${API_BASE}/cards/${cardId}/pay`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fromAccountId, amount }),
@@ -140,7 +147,7 @@ export async function payCard(cardId, fromAccountId, amount) {
 }
 
 export async function deleteCard(id) {
-  const res = await fetch(`${API_BASE}/cards/${id}`, {
+  const res = await request(`${API_BASE}/cards/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete card');
@@ -148,7 +155,7 @@ export async function deleteCard(id) {
 }
 
 export async function toggleFixed(id) {
-  const res = await fetch(`${API_BASE}/fixed/${id}`, {
+  const res = await request(`${API_BASE}/fixed/${id}`, {
     method: 'PUT',
   });
   if (!res.ok) throw new Error('Failed to toggle fixed expense');
@@ -156,7 +163,7 @@ export async function toggleFixed(id) {
 }
 
 export async function addFixed(payload) {
-  const res = await fetch(`${API_BASE}/fixed`, {
+  const res = await request(`${API_BASE}/fixed`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -166,7 +173,7 @@ export async function addFixed(payload) {
 }
 
 export async function deleteFixed(id) {
-  const res = await fetch(`${API_BASE}/fixed/${id}`, {
+  const res = await request(`${API_BASE}/fixed/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete fixed bill');
@@ -174,13 +181,13 @@ export async function deleteFixed(id) {
 }
 
 export async function fetchPlans() {
-  const res = await fetch(`${API_BASE}/plans`);
+  const res = await request(`${API_BASE}/plans`);
   if (!res.ok) throw new Error('Failed to fetch plans');
   return res.json();
 }
 
 export async function addPlan(payload) {
-  const res = await fetch(`${API_BASE}/plans`, {
+  const res = await request(`${API_BASE}/plans`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -190,7 +197,7 @@ export async function addPlan(payload) {
 }
 
 export async function payPlan(planId, fromAccountId) {
-  const res = await fetch(`${API_BASE}/plans/${planId}/pay`, {
+  const res = await request(`${API_BASE}/plans/${planId}/pay`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ fromAccountId }),
@@ -200,7 +207,7 @@ export async function payPlan(planId, fromAccountId) {
 }
 
 export async function deletePlan(id) {
-  const res = await fetch(`${API_BASE}/plans/${id}`, {
+  const res = await request(`${API_BASE}/plans/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to delete plan');
@@ -208,7 +215,7 @@ export async function deletePlan(id) {
 }
 
 export async function updateBudget(budget) {
-  const res = await fetch(`${API_BASE}/budget`, {
+  const res = await request(`${API_BASE}/budget`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ budget }),
@@ -218,7 +225,7 @@ export async function updateBudget(budget) {
 }
 
 export async function resetData(cleanSlate) {
-  const res = await fetch(`${API_BASE}/reset`, {
+  const res = await request(`${API_BASE}/reset`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ cleanSlate }),
@@ -228,13 +235,13 @@ export async function resetData(cleanSlate) {
 }
 
 export async function fetchDBStatus() {
-  const res = await fetch(`${API_BASE}/db/status`);
+  const res = await request(`${API_BASE}/db/status`);
   if (!res.ok) throw new Error('Failed to fetch DB status');
   return res.json();
 }
 
 export async function connectDB(databaseUrl) {
-  const res = await fetch(`${API_BASE}/db/connect`, {
+  const res = await request(`${API_BASE}/db/connect`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ database_url: databaseUrl }),
@@ -245,7 +252,7 @@ export async function connectDB(databaseUrl) {
 }
 
 export async function parseText(text, kind) {
-  const res = await fetch(`${API_BASE}/parse`, {
+  const res = await request(`${API_BASE}/parse`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text, kind }),

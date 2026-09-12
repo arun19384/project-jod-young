@@ -28,7 +28,7 @@ func InitializeApp() *AppContainer {
 	appService := coreServices.NewAppService(repo, parserService, cfgPort)
 
 	// 4. Driving Adapter: Fiber Web Router & Handlers
-	fiberApp := fiberAdapter.NewFiberRouter(appService, parserService, cfg.AllowOrigins)
+	fiberApp := fiberAdapter.NewFiberRouter(appService, parserService, cfg.AllowOrigins, cfg.APIKey)
 
 	return &AppContainer{
 		FiberApp: fiberApp,

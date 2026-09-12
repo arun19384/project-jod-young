@@ -250,7 +250,9 @@ func (h *FiberHandler) AddCard(c *fiber.Ctx) error {
 func (h *FiberHandler) PayCard(c *fiber.Ctx) error {
 	cardID := c.Params("id")
 	var req domain.PayCardRequest
-	_ = c.BodyParser(&req)
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
+	}
 
 	updated, err := h.appUseCase.PayCard(cardID, req.FromAccountID, req.Amount)
 	if err != nil {
@@ -332,7 +334,9 @@ func (h *FiberHandler) AddPlan(c *fiber.Ctx) error {
 func (h *FiberHandler) PayPlan(c *fiber.Ctx) error {
 	planID := c.Params("id")
 	var req domain.PayPlanRequest
-	_ = c.BodyParser(&req)
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid payload"})
+	}
 
 	updated, err := h.appUseCase.PayPlan(planID, req.FromAccountID)
 	if err != nil {

@@ -189,4 +189,5 @@ type AppConfig struct {
 	ConfigPath   string `mapstructure:"config_path" json:"config_path"`
 	AllowOrigins string `mapstructure:"allow_origins" json:"allow_origins"`
 	Environment  string `mapstructure:"env" json:"env"`
+	APIKey       string `mapstructure:"api_key" json:"-"`
 }

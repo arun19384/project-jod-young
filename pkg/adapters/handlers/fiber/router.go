@@ -2,6 +2,7 @@ package fiber
 
 import (
 	"ai-in-my-area-backend/pkg/core/ports"
+	"crypto/subtle"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -9,7 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
-func NewFiberRouter(appUseCase ports.AppUseCase, parserUseCase ports.ParserUseCase, allowOrigins string) *fiber.App {
+func NewFiberRouter(appUseCase ports.AppUseCase, parserUseCase ports.ParserUseCase, allowOrigins string, apiKey ...string) *fiber.App {
 	if allowOrigins == "" {
 		allowOrigins = "*"
 	}
@@ -30,6 +31,22 @@ func NewFiberRouter(appUseCase ports.AppUseCase, parserUseCase ports.ParserUseCa
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
+	if len(apiKey) > 0 && apiKey[0] != "" {
+		expected := apiKey[0]
+		app.Use(func(c *fiber.Ctx) error {
+			provided := c.Get("X-API-Key")
+			if provided == "" {
+				provided = c.Get("Authorization")
+				if len(provided) > 7 && provided[:7] == "Bearer " {
+					provided = provided[7:]
+				}
+			}
+			if subtle.ConstantTimeCompare([]byte(provided), []byte(expected)) != 1 {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+			}
+			return c.Next()
+		})
+	}
 
 	h := NewFiberHandler(appUseCase, parserUseCase)
 

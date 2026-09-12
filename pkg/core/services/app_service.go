@@ -158,6 +158,9 @@ func (s *AppService) DeleteAccount(id string) bool {
 }
 
 func (s *AppService) TransferAccount(fromID, toID string, amount float64, note string) error {
+	if fromID == "" || toID == "" || fromID == toID || amount <= 0 {
+		return errors.New("invalid transfer request")
+	}
 	return s.repo.TransferAccount(fromID, toID, amount, note)
 }
 
@@ -166,6 +169,9 @@ func (s *AppService) AddCard(card domain.CreditCard) domain.CreditCard {
 }
 
 func (s *AppService) PayCard(cardID, fromAccountID string, amount float64) (domain.CreditCard, error) {
+	if cardID == "" || fromAccountID == "" || amount <= 0 {
+		return domain.CreditCard{}, errors.New("invalid card payment request")
+	}
 	return s.repo.PayCard(cardID, fromAccountID, amount)
 }
 
@@ -194,6 +200,9 @@ func (s *AppService) AddPlan(plan domain.InstallmentPlan) domain.InstallmentPlan
 }
 
 func (s *AppService) PayPlan(planID, fromAccountID string) (domain.InstallmentPlan, error) {
+	if planID == "" || fromAccountID == "" {
+		return domain.InstallmentPlan{}, errors.New("invalid installment payment request")
+	}
 	return s.repo.PayPlan(planID, fromAccountID)
 }
 
@@ -202,6 +211,9 @@ func (s *AppService) DeletePlan(id string) bool {
 }
 
 func (s *AppService) UpdateBudget(budget float64) float64 {
+	if budget < 0 {
+		return 0
+	}
 	return s.repo.UpdateBudget(budget)
 }
 
