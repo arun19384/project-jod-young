@@ -402,7 +402,7 @@ export function AddCardModal({ onSave, onClose }) {
 // 4. Pay Credit Card Modal
 export function PayCardModal({ card, accounts = [], onConfirm, onClose }) {
   const [selectedAcc, setSelectedAcc] = useState(accounts[0]?.id || 'Main');
-  const [amount, setAmount] = useState(card.amt || 0);
+  const [amount, setAmount] = useState(Math.abs(card.amt || 0));
 
   return (
     <div style={modalOverlayStyle}>
@@ -440,7 +440,7 @@ export function PayCardModal({ card, accounts = [], onConfirm, onClose }) {
           <button
             style={primaryBtnStyle}
             className="pressable"
-            onClick={() => onConfirm(card.id, selectedAcc, amount)}
+            onClick={() => onConfirm(card.id, selectedAcc, Math.abs(amount))}
           >
             ยืนยันชำระ
           </button>
@@ -1524,8 +1524,15 @@ export function WalletTransactionsModal({
 
   const isCard = !!(wallet.isCard || wallet.cut || wallet.due || (wallet.role && wallet.role.includes('บัตร')));
   const walletName = (wallet.name === 'เงินสด/บัญชีหลัก' || wallet.name === 'Main' || wallet.name === 'บัญชีหลัก') ? 'บัญชีใช้จ่าย' : wallet.name;
-  const targetName = walletName.toLowerCase();
-  const targetId = (wallet.id || '').toLowerCase();
+  const normalizeWalletKey = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const targetName = normalizeWalletKey(walletName);
+  const targetId = normalizeWalletKey(wallet.id);
+  const cardMatchKeys = new Set(
+    [targetName, targetId, targetId && `บัตร ${targetId}`, targetId && `บัตร${targetId}`]
+      .filter(Boolean)
+      .map(normalizeWalletKey)
+  );
+  const isCardSystemTx = (tx) => tx?.c === 'โอนเงิน' || tx?.c === 'ชำระบัตรเครดิต';
 
   // 1. Convert statement lines from credit card into transactions if available
   const cardLinesAsTxs = (isCard && Array.isArray(wallet.lines))
@@ -1547,20 +1554,13 @@ export function WalletTransactionsModal({
   // 2. Filter transactions matching this wallet from app transactions
   const matchedAppTxs = transactions.filter((tx) => {
     if (!tx.acct) return false;
-    const acct = tx.acct.trim().toLowerCase();
+    const acct = normalizeWalletKey(tx.acct);
+    if (isCard) {
+      if (isCardSystemTx(tx)) return false;
+      return cardMatchKeys.has(acct);
+    }
     if (acct === targetName || acct === targetId) return true;
     if ((targetName === 'บัญชีใช้จ่าย' || targetName === 'บัญชีหลัก') && (acct === 'บัญชีใช้จ่าย' || acct === 'บัญชีหลัก' || acct === 'main' || acct === 'เงินสด/บัญชีหลัก')) return true;
-    if (isCard) {
-      if (acct.includes(targetName) || targetName.includes(acct)) return true;
-      if (targetId && (acct === `บัตร ${targetId}` || acct === `บัตร${targetId}`)) return true;
-      if (acct.includes('บัตร') && walletName.includes('บัตร')) {
-        const cardLetter = walletName.replace('บัตร', '').trim().toLowerCase();
-        if (cardLetter && acct.includes(cardLetter)) return true;
-      }
-      // Match parts of card name (e.g. "ktc" or "ใส")
-      const nameParts = targetName.split(/\s+/).filter((p) => p.length > 1);
-      if (nameParts.length > 0 && nameParts.some((p) => acct.includes(p))) return true;
-    }
     return false;
   });
 
@@ -1576,8 +1576,8 @@ export function WalletTransactionsModal({
   });
 
   // 4. If card has an initial balance set during card creation that exceeds recorded transactions
-  const recordedOut = walletTxs.filter((t) => !t.income).reduce((sum, t) => sum + (t.a || 0), 0);
-  const cardInitialAmt = Math.abs(wallet.amt || 0);
+  const recordedOut = walletTxs.filter((t) => !t.income && !isCardSystemTx(t)).reduce((sum, t) => sum + (t.a || 0), 0);
+  const cardInitialAmt = Math.abs(wallet.amt ?? wallet.used ?? 0);
   const diff = cardInitialAmt - recordedOut;
   if (isCard && diff > 0.01) {
     walletTxs.push({
@@ -1597,7 +1597,7 @@ export function WalletTransactionsModal({
 
   // Stats calculation
   const totalIn = walletTxs.filter((t) => t.income).reduce((sum, t) => sum + (t.a || 0), 0);
-  const totalOut = walletTxs.filter((t) => !t.income).reduce((sum, t) => sum + (t.a || 0), 0);
+  const totalOut = walletTxs.filter((t) => !t.income && !isCardSystemTx(t)).reduce((sum, t) => sum + (t.a || 0), 0);
 
   // Filtered by search & type
   const filtered = walletTxs.filter((tx) => {
@@ -1614,7 +1614,7 @@ export function WalletTransactionsModal({
   });
 
   const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
-  const cardAmount = Math.abs(wallet.amt || totalOut || 0);
+  const cardAmount = Math.abs(wallet.amt ?? wallet.used ?? 0);
 
   return (
     <div className="wallet-detail-overlay" style={modalOverlayStyle} onClick={onClose}>
@@ -1753,7 +1753,7 @@ export function WalletTransactionsModal({
             <div className="wallet-detail-summary-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
               <div style={{ minWidth: 0 }}>
                 <span style={{ font: "400 11.5px/1 'IBM Plex Sans Thai'", color: '#8a8780' }}>
-                  {isCard ? 'ยอดที่รูดใช้ไป / ยอดค้างชำระ' : 'ยอดเงินคงเหลือในบัญชี'}
+                  {isCard ? 'ยอดค้างชำระปัจจุบัน' : 'ยอดเงินคงเหลือในบัญชี'}
                 </span>
                 <div style={{ font: "600 28px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums', marginTop: '4px' }}>
                   {isCard ? fmt(cardAmount) : fmt(wallet.amt)} <span style={{ fontSize: '14px', fontWeight: '400', color: '#78756e' }}>บาท</span>
@@ -1766,7 +1766,7 @@ export function WalletTransactionsModal({
                   <button
                     onClick={() => {
                       onClose();
-                      onOpenPayCard(wallet);
+                      onOpenPayCard({ ...wallet, amt: cardAmount });
                     }}
                     className="pressable"
                     style={{
@@ -1866,9 +1866,9 @@ export function WalletTransactionsModal({
               {isCard ? (
                 <>
                   <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
-                    <span style={{ fontSize: '10.5px', color: '#d97757' }}>💳 รูดใช้จ่ายทั้งหมด</span>
+                    <span style={{ fontSize: '10.5px', color: '#d97757' }}>💳 รูดที่พบในประวัติ</span>
                     <div style={{ font: "600 14px 'IBM Plex Sans Thai'", color: '#d97757', marginTop: '2px' }}>
-                      -{fmt(totalOut || cardAmount)} บ.
+                      -{fmt(totalOut)} บ.
                     </div>
                   </div>
                   <div style={{ background: '#252422', padding: '8px 10px', borderRadius: '10px' }}>
