@@ -63,9 +63,23 @@ html, body {
 }
 
 @media screen and (max-width: 520px), screen and (pointer: coarse) {
+  .wallet-detail-overlay {
+    align-items: flex-end !important;
+    padding-top: max(28px, env(safe-area-inset-top, 0px)) !important;
+    padding-right: 10px !important;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: 10px !important;
+  }
+
   .wallet-detail-modal {
     width: 100%;
-    border-radius: 20px;
+    max-height: min(82dvh, calc(100dvh - max(52px, env(safe-area-inset-top, 0px)) - max(12px, env(safe-area-inset-bottom, 0px)))) !important;
+    border-radius: 20px 20px 16px 16px;
+  }
+
+  .wallet-detail-header {
+    padding: 12px 12px !important;
+    gap: 8px;
   }
 
   .wallet-detail-body {
@@ -80,6 +94,23 @@ html, body {
 
   .wallet-detail-actions {
     justify-content: flex-start !important;
+  }
+
+  .spending-balance-line {
+    align-items: flex-end !important;
+    flex-wrap: wrap;
+  }
+
+  .spending-balance-amount {
+    font-size: 38px !important;
+    line-height: 0.98 !important;
+    max-width: 100%;
+  }
+}
+
+@media screen and (max-width: 360px) {
+  .spending-balance-amount {
+    font-size: 34px !important;
   }
 }
 

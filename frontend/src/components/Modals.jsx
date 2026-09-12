@@ -1617,13 +1617,13 @@ export function WalletTransactionsModal({
   const cardAmount = Math.abs(wallet.amt || totalOut || 0);
 
   return (
-    <div style={modalOverlayStyle} onClick={onClose}>
+    <div className="wallet-detail-overlay" style={modalOverlayStyle} onClick={onClose}>
       <div
         className="wallet-detail-modal animate-spring-sheet"
         style={{
           ...modalBoxStyle,
           maxWidth: '480px',
-          maxHeight: 'calc(100dvh - max(24px, env(safe-area-inset-top, 0px)) - max(24px, env(safe-area-inset-bottom, 0px)))',
+          maxHeight: 'min(82dvh, calc(100dvh - max(24px, env(safe-area-inset-top, 0px)) - max(24px, env(safe-area-inset-bottom, 0px))))',
           padding: '0',
           overflow: 'hidden',
           display: 'flex',
@@ -1634,8 +1634,9 @@ export function WalletTransactionsModal({
       >
         {/* Modal Header */}
         <div
+          className="wallet-detail-header"
           style={{
-            padding: '16px 20px',
+            padding: '14px 16px',
             borderBottom: '1px solid #33322e',
             display: 'flex',
             alignItems: 'center',
@@ -1645,6 +1646,29 @@ export function WalletTransactionsModal({
             minWidth: 0,
           }}
         >
+          <button
+            onClick={onClose}
+            className="pressable"
+            style={{
+              background: '#353430',
+              border: '1px solid #45433c',
+              borderRadius: '10px',
+              minWidth: '58px',
+              height: '32px',
+              color: '#f0eee6',
+              cursor: 'pointer',
+              fontSize: '12.5px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              flex: 'none',
+            }}
+            title="กลับ"
+          >
+            ← กลับ
+          </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
             <span
               style={{
@@ -1688,6 +1712,7 @@ export function WalletTransactionsModal({
           </div>
           <button
             onClick={onClose}
+            className="wallet-detail-close"
             style={{
               background: '#353430',
               border: 'none',
@@ -1697,6 +1722,7 @@ export function WalletTransactionsModal({
               color: '#a8a49a',
               cursor: 'pointer',
               fontSize: '13px',
+              flex: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

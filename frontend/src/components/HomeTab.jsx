@@ -323,7 +323,7 @@ export default function HomeTab({
                 background: spendingAccount?.tint || '#d97757',
               }}
             />
-            <span style={{ font: "600 13.5px/1.4 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
+            <span style={{ font: "600 13.5px/1.4 'IBM Plex Sans Thai'", color: '#f0eee6', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               บัญชีใช้จ่าย ({spendingAccountName})
             </span>
             <span style={{ fontSize: '10.5px', color: '#d97757', background: 'rgba(217,119,87,0.14)', padding: '2px 6px', borderRadius: '5px' }}>
@@ -360,8 +360,8 @@ export default function HomeTab({
           style={{ display: 'flex', flexDirection: 'column', gap: '2px', cursor: 'pointer' }}
           title="แตะเพื่อดูประวัติรายการในบัญชีใช้จ่าย"
         >
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px' }}>
-            <div style={{ font: "600 44px/1 'IBM Plex Sans Thai'", color: '#f0eee6', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+          <div className="spending-balance-line" style={{ display: 'flex', alignItems: 'baseline', gap: '7px', minWidth: 0 }}>
+            <div className="spending-balance-amount" style={{ font: "600 44px/1 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums', minWidth: 0, overflowWrap: 'anywhere' }}>
               {fmt(spendingBalance)}
             </div>
             <div style={{ font: "400 15px/1 'IBM Plex Sans Thai'", color: '#78756e' }}>บาท</div>
