@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jod-ngen-v4-viewport';
+const CACHE_NAME = 'jod-ngen-v5-safe-area';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

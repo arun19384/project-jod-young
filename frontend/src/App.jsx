@@ -262,23 +262,6 @@ export default function App() {
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
 
-    // Follow the visible viewport without fighting Safari's focus scrolling.
-    const viewport = window.visualViewport;
-    let viewportFrame;
-    const updateViewport = () => {
-      cancelAnimationFrame(viewportFrame);
-      viewportFrame = requestAnimationFrame(() => {
-        if (viewport && Math.abs(viewport.scale - 1) > 0.01) return;
-        document.documentElement.style.setProperty('--app-height', `${viewport?.height || window.innerHeight}px`);
-        document.documentElement.style.setProperty('--app-top', `${viewport?.offsetTop || 0}px`);
-      });
-    };
-    updateViewport();
-    window.addEventListener('resize', updateViewport);
-    window.addEventListener('pageshow', updateViewport);
-    viewport?.addEventListener('resize', updateViewport);
-    viewport?.addEventListener('scroll', updateViewport);
-
     const clockTimer = setInterval(() => {
       const now = new Date();
       setCurrentTime(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`);
@@ -287,11 +270,6 @@ export default function App() {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
-      cancelAnimationFrame(viewportFrame);
-      window.removeEventListener('resize', updateViewport);
-      window.removeEventListener('pageshow', updateViewport);
-      viewport?.removeEventListener('resize', updateViewport);
-      viewport?.removeEventListener('scroll', updateViewport);
       clearInterval(clockTimer);
     };
   }, []);
@@ -512,6 +490,7 @@ export default function App() {
 
   const content = (
     <div
+      className={isRealMobile ? 'ios-safe-area-shell' : undefined}
       style={{
         position: 'relative',
         width: '100%',
@@ -542,14 +521,12 @@ export default function App() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          paddingTop: isRealMobile
-            ? 'max(env(safe-area-inset-top, 0px), 14px)'
-            : isMobileFrame
+          paddingTop: isMobileFrame && !isRealMobile
             ? '18px'
             : '14px',
           paddingBottom: '10px',
-          paddingLeft: 'max(env(safe-area-inset-left, 0px), 18px)',
-          paddingRight: 'max(env(safe-area-inset-right, 0px), 18px)',
+          paddingLeft: '18px',
+          paddingRight: '18px',
           background: '#262624',
           borderBottom: '1px solid #2f2e2b',
           zIndex: 50,
@@ -747,9 +724,9 @@ export default function App() {
           borderTop: '1px solid #34332f',
           background: '#262624',
           paddingTop: '8px',
-          paddingLeft: 'max(env(safe-area-inset-left, 0px), 12px)',
-          paddingRight: 'max(env(safe-area-inset-right, 0px), 12px)',
-          paddingBottom: isRealMobile ? 'max(env(safe-area-inset-bottom, 0px), 14px)' : '10px',
+          paddingLeft: '12px',
+          paddingRight: '12px',
+          paddingBottom: '10px',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '4px',
@@ -761,7 +738,7 @@ export default function App() {
           style={{
             position: 'absolute',
             top: '8px',
-            bottom: isRealMobile ? 'max(env(safe-area-inset-bottom, 0px), 14px)' : '10px',
+            bottom: '10px',
             left: '12px',
             width: 'calc((100% - 24px - 12px) / 4)',
             background: 'rgba(217, 119, 87, 0.16)',
