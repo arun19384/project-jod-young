@@ -52,6 +52,37 @@ html, body {
   padding-left: env(safe-area-inset-left, 0px);
 }
 
+.wallet-detail-modal {
+  width: min(480px, 100%);
+  min-height: 0;
+  overscroll-behavior: contain;
+}
+
+.wallet-detail-body {
+  scrollbar-gutter: stable;
+}
+
+@media screen and (max-width: 520px), screen and (pointer: coarse) {
+  .wallet-detail-modal {
+    width: 100%;
+    border-radius: 20px;
+  }
+
+  .wallet-detail-body {
+    padding: 14px !important;
+  }
+
+  .wallet-detail-summary-row,
+  .wallet-detail-filter {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .wallet-detail-actions {
+    justify-content: flex-start !important;
+  }
+}
+
 .app-scroll-content {
   overflow-anchor: none;
   overscroll-behavior-y: none;

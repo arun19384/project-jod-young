@@ -11,7 +11,7 @@ const modalOverlayStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '16px',
+  padding: 'max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px))',
 };
 
 const modalBoxStyle = {
@@ -25,7 +25,7 @@ const modalBoxStyle = {
   flexDirection: 'column',
   gap: '16px',
   boxShadow: '0 25px 60px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06)',
-  maxHeight: '88vh',
+  maxHeight: 'calc(100dvh - max(32px, env(safe-area-inset-top, 0px)) - max(32px, env(safe-area-inset-bottom, 0px)))',
   overflowY: 'auto',
 };
 
@@ -1619,15 +1619,16 @@ export function WalletTransactionsModal({
   return (
     <div style={modalOverlayStyle} onClick={onClose}>
       <div
-        className="animate-spring-up"
+        className="wallet-detail-modal animate-spring-sheet"
         style={{
           ...modalBoxStyle,
           maxWidth: '480px',
-          maxHeight: '88vh',
+          maxHeight: 'calc(100dvh - max(24px, env(safe-area-inset-top, 0px)) - max(24px, env(safe-area-inset-bottom, 0px)))',
           padding: '0',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
+          gap: 0,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -1640,9 +1641,11 @@ export function WalletTransactionsModal({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: '#232220',
+            flex: 'none',
+            minWidth: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
             <span
               style={{
                 width: '32px',
@@ -1658,9 +1661,9 @@ export function WalletTransactionsModal({
             >
               {isCard ? '💳' : (walletName === 'บัญชีใช้จ่าย' || walletName === 'บัญชีหลัก' ? '💰' : '🏦')}
             </span>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ font: "600 16px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                <span style={{ font: "600 16px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {walletName}
                 </span>
                 <span
@@ -1704,7 +1707,7 @@ export function WalletTransactionsModal({
         </div>
 
         {/* Scrollable Body */}
-        <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="wallet-detail-body" style={{ padding: '18px 20px', overflowY: 'auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '16px', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {/* Wallet / Credit Card Summary Card */}
           <div
             style={{
@@ -1721,8 +1724,8 @@ export function WalletTransactionsModal({
           >
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: wallet.tint || (isCard ? '#9b8ec4' : '#d97757') }} />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-              <div>
+            <div className="wallet-detail-summary-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+              <div style={{ minWidth: 0 }}>
                 <span style={{ font: "400 11.5px/1 'IBM Plex Sans Thai'", color: '#8a8780' }}>
                   {isCard ? 'ยอดที่รูดใช้ไป / ยอดค้างชำระ' : 'ยอดเงินคงเหลือในบัญชี'}
                 </span>
@@ -1732,7 +1735,7 @@ export function WalletTransactionsModal({
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <div className="wallet-detail-actions" style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 {isCard && onOpenPayCard && (
                   <button
                     onClick={() => {
@@ -1869,7 +1872,7 @@ export function WalletTransactionsModal({
           </div>
 
           {/* Search & Filter Bar */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="wallet-detail-filter" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <input
               type="text"
               placeholder={`🔍 ค้นหารายการใน${isCard ? 'บัตรนี้' : 'บัญชีนี้'}...`}
@@ -1882,7 +1885,7 @@ export function WalletTransactionsModal({
                 borderRadius: '10px',
               }}
             />
-            <div style={{ display: 'flex', gap: '4px' }}>
+            <div style={{ display: 'flex', gap: '4px', flex: 'none' }}>
               <button
                 onClick={() => setFilterType('ALL')}
                 style={{
@@ -2099,6 +2102,7 @@ export function WalletTransactionsModal({
             display: 'flex',
             justifyContent: 'flex-end',
             background: '#232220',
+            flex: 'none',
           }}
         >
           <button style={{ ...cancelBtnStyle, padding: '8px 18px' }} onClick={onClose}>
