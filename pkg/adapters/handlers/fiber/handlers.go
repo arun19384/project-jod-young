@@ -3,6 +3,7 @@ package fiber
 import (
 	"ai-in-my-area-backend/pkg/core/domain"
 	"ai-in-my-area-backend/pkg/core/ports"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -63,11 +64,35 @@ func (h *FiberHandler) GetSummary(c *fiber.Ctx) error {
 // GetBootstrap returns all data needed for the initial dashboard in one request.
 // This avoids four independent serverless/DB round trips during page load.
 func (h *FiberHandler) GetBootstrap(c *fiber.Ctx) error {
-	accounts, cards, fixed, bankTotal := h.appUseCase.GetAccounts()
-	monthly, remaining, plans := h.appUseCase.GetPlans()
+	var summary domain.SummaryResponse
+	var transactions []domain.Transaction
+	var accounts []domain.BankAccount
+	var cards []domain.CreditCard
+	var fixed []domain.FixedExpense
+	var bankTotal, monthly, remaining float64
+	var plans []domain.InstallmentPlan
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		accounts, cards, fixed, bankTotal = h.appUseCase.GetAccounts()
+	}()
+	go func() {
+		defer wg.Done()
+		monthly, remaining, plans = h.appUseCase.GetPlans()
+	}()
+	go func() {
+		defer wg.Done()
+		summary = h.appUseCase.GetSummary()
+	}()
+	go func() {
+		defer wg.Done()
+		transactions = h.appUseCase.GetTransactions()
+	}()
+	wg.Wait()
 	return c.JSON(fiber.Map{
-		"summary":      h.appUseCase.GetSummary(),
-		"transactions": h.appUseCase.GetTransactions(),
+		"summary":      summary,
+		"transactions": transactions,
 		"accounts":     accounts,
 		"cards":        cards,
 		"fixed":        fixed,
@@ -159,7 +184,10 @@ func (h *FiberHandler) AddDebt(c *fiber.Ctx) error {
 			"error": "Invalid payload",
 		})
 	}
-	created := h.appUseCase.AddDebt(d)
+	created, err := h.appUseCase.AddDebt(d)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
 	return c.Status(fiber.StatusCreated).JSON(created)
 }
 
@@ -204,7 +232,10 @@ func (h *FiberHandler) AddAccount(c *fiber.Ctx) error {
 			"error": "Invalid payload",
 		})
 	}
-	created := h.appUseCase.AddAccount(acc)
+	created, err := h.appUseCase.AddAccount(acc)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
 	return c.Status(fiber.StatusCreated).JSON(created)
 }
 
@@ -263,7 +294,10 @@ func (h *FiberHandler) AddCard(c *fiber.Ctx) error {
 			"error": "Invalid payload",
 		})
 	}
-	created := h.appUseCase.AddCard(card)
+	created, err := h.appUseCase.AddCard(card)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
 	return c.Status(fiber.StatusCreated).JSON(created)
 }
 
@@ -303,7 +337,10 @@ func (h *FiberHandler) AddFixed(c *fiber.Ctx) error {
 			"error": "Invalid payload",
 		})
 	}
-	created := h.appUseCase.AddFixed(fixed)
+	created, err := h.appUseCase.AddFixed(fixed)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
 	return c.Status(fiber.StatusCreated).JSON(created)
 }
 
@@ -347,7 +384,10 @@ func (h *FiberHandler) AddPlan(c *fiber.Ctx) error {
 			"error": "Invalid payload",
 		})
 	}
-	created := h.appUseCase.AddPlan(p)
+	created, err := h.appUseCase.AddPlan(p)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
 	return c.Status(fiber.StatusCreated).JSON(created)
 }
 

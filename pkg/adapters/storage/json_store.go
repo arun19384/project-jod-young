@@ -81,6 +81,9 @@ func (s *JSONFileStore) GetSummary() domain.SummaryResponse {
 
 	var income, spent float64
 	for _, tx := range s.db.Transactions {
+		if !isCurrentMonth(tx.Date) || !countsAsSpending(tx.Category) {
+			continue
+		}
 		if tx.IsIncome {
 			income += tx.Amount
 		} else {
@@ -96,7 +99,7 @@ func (s *JSONFileStore) GetSummary() domain.SummaryResponse {
 	var fixedDone int
 	for _, f := range s.db.Fixed {
 		fixedTotal += f.Amount
-		if f.Done {
+		if f.Done && (f.DoneMonth == "" || f.DoneMonth == currentMonthKey()) {
 			fixedDone++
 		}
 	}
@@ -108,7 +111,7 @@ func (s *JSONFileStore) GetSummary() domain.SummaryResponse {
 		}
 	}
 
-	totalSpent := spent + fixedTotal + planMonthly
+	totalSpent := spent
 	left := income - totalSpent
 
 	spentPct := 0
@@ -121,7 +124,7 @@ func (s *JSONFileStore) GetSummary() domain.SummaryResponse {
 
 	dues := make([]domain.DueItem, 0)
 	for _, f := range s.db.Fixed {
-		if !f.Done {
+		if !f.Done || (f.DoneMonth != "" && f.DoneMonth != currentMonthKey()) {
 			dues = append(dues, domain.DueItem{
 				Day:    f.Day,
 				Name:   f.Name,
@@ -188,7 +191,7 @@ func (s *JSONFileStore) GetTransactions() []domain.Transaction {
 	return res
 }
 
-func (s *JSONFileStore) AddTransaction(tx domain.Transaction) domain.Transaction {
+func (s *JSONFileStore) AddTransaction(tx domain.Transaction) (domain.Transaction, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -198,29 +201,51 @@ func (s *JSONFileStore) AddTransaction(tx domain.Transaction) domain.Transaction
 		tx.ID = fmt.Sprintf("tx-%d", now.UnixNano())
 	}
 	if tx.Date == "" {
-		tx.Date = now.Format("02 Jan")
+		tx.Date = now.Format("2006-01-02")
 	}
 	if tx.When == "" {
 		tx.When = "วันนี้ · " + now.Format("15:04 น.")
 	}
-	tx.IsToday = true
-
-	s.db.Transactions = append([]domain.Transaction{tx}, s.db.Transactions...)
+	tx.IsToday = tx.Date == now.Format("2006-01-02")
 
 	// Update bank or card
+	found := false
 	for i, a := range s.db.Accounts {
 		if strings.EqualFold(a.Name, tx.Account) || strings.EqualFold(a.ID, tx.Account) {
+			if !tx.IsIncome && a.Amount < tx.Amount {
+				return domain.Transaction{}, errors.New("insufficient balance in account")
+			}
 			if tx.IsIncome {
 				s.db.Accounts[i].Amount += tx.Amount
 			} else {
 				s.db.Accounts[i].Amount -= tx.Amount
 			}
+			found = true
 			break
 		}
 	}
+	if !found && !tx.IsIncome {
+		for i, c := range s.db.Cards {
+			if strings.EqualFold(c.Name, tx.Account) || strings.EqualFold(c.ID, tx.Account) {
+				s.db.Cards[i].Amount += tx.Amount
+				if c.Limit > 0 {
+					s.db.Cards[i].Pct = int((s.db.Cards[i].Amount / c.Limit) * 100)
+				}
+				s.db.Cards[i].Status = "ค้างชำระ"
+				found = true
+				break
+			}
+		}
+	}
+	if !found {
+		return domain.Transaction{}, errors.New("account or card not found")
+	}
+	s.db.Transactions = append([]domain.Transaction{tx}, s.db.Transactions...)
 
-	_ = s.save()
-	return tx
+	if err := s.save(); err != nil {
+		return domain.Transaction{}, err
+	}
+	return tx, nil
 }
 
 func (s *JSONFileStore) UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error) {
@@ -238,6 +263,9 @@ func (s *JSONFileStore) UpdateTransaction(id string, req domain.UpdateTransactio
 	}
 	if idx == -1 {
 		return domain.Transaction{}, errors.New("transaction not found")
+	}
+	if !countsAsSpending(oldTx.Category) {
+		return domain.Transaction{}, errors.New("system transactions cannot be edited")
 	}
 
 	// 1. Revert old transaction balance effect
@@ -293,6 +321,7 @@ func (s *JSONFileStore) UpdateTransaction(id string, req domain.UpdateTransactio
 	if req.Date != "" {
 		newTx.Date = req.Date
 	}
+	newTx.IsToday = newTx.Date == time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02")
 	if req.When != "" {
 		newTx.When = req.When
 	}
@@ -352,6 +381,9 @@ func (s *JSONFileStore) DeleteTransaction(id string) bool {
 	if idx == -1 {
 		return false
 	}
+	if !countsAsSpending(target.Category) {
+		return false
+	}
 
 	s.db.Transactions = append(s.db.Transactions[:idx], s.db.Transactions[idx+1:]...)
 
@@ -364,6 +396,17 @@ func (s *JSONFileStore) DeleteTransaction(id string) bool {
 				s.db.Accounts[i].Amount += target.Amount
 			}
 			break
+		}
+	}
+	if !target.IsIncome {
+		for i, c := range s.db.Cards {
+			if strings.EqualFold(c.Name, target.Account) || strings.EqualFold(c.ID, target.Account) {
+				s.db.Cards[i].Amount = max(0, s.db.Cards[i].Amount-target.Amount)
+				if c.Limit > 0 {
+					s.db.Cards[i].Pct = int((s.db.Cards[i].Amount / c.Limit) * 100)
+				}
+				break
+			}
 		}
 	}
 
@@ -436,6 +479,9 @@ func (s *JSONFileStore) GetAccounts() (accounts []domain.BankAccount, cards []do
 
 	fixed = make([]domain.FixedExpense, len(s.db.Fixed))
 	copy(fixed, s.db.Fixed)
+	for i := range fixed {
+		fixed[i].Done = fixed[i].Done && (fixed[i].DoneMonth == "" || fixed[i].DoneMonth == currentMonthKey())
+	}
 
 	for _, a := range accounts {
 		bankTotal += a.Amount
@@ -527,7 +573,7 @@ func (s *JSONFileStore) TransferAccount(fromID, toID string, amount float64, not
 		CategoryTint: "#7fa3c9",
 		Amount:       amount,
 		Account:      s.db.Accounts[fromIdx].Name,
-		Date:         nowBkk.Format("02 Jan"),
+		Date:         nowBkk.Format("2006-01-02"),
 		When:         "วันนี้ · " + nowBkk.Format("15:04 น."),
 		IsIncome:     false,
 		IsToday:      true,
@@ -563,19 +609,43 @@ func (s *JSONFileStore) PayCard(cardID, fromAccountID string, amount float64) (d
 	if cIdx == -1 {
 		return domain.CreditCard{}, errors.New("card not found")
 	}
+	if amount <= 0 || amount > s.db.Cards[cIdx].Amount {
+		return domain.CreditCard{}, errors.New("payment exceeds outstanding balance")
+	}
 
+	aIdx := -1
 	for i, a := range s.db.Accounts {
 		if a.ID == fromAccountID || a.Name == fromAccountID {
-			s.db.Accounts[i].Amount -= amount
+			aIdx = i
 			break
 		}
 	}
+	if aIdx == -1 {
+		return domain.CreditCard{}, errors.New("payment account not found")
+	}
+	if s.db.Accounts[aIdx].Amount < amount {
+		return domain.CreditCard{}, errors.New("insufficient balance in payment account")
+	}
+	s.db.Accounts[aIdx].Amount -= amount
 
 	s.db.Cards[cIdx].Amount -= amount
 	if s.db.Cards[cIdx].Amount <= 0 {
 		s.db.Cards[cIdx].Amount = 0
 		s.db.Cards[cIdx].Status = "ชำระแล้ว"
 	}
+	if s.db.Cards[cIdx].Amount > 0 {
+		s.db.Cards[cIdx].Status = "ค้างชำระ"
+	}
+	if s.db.Cards[cIdx].Limit > 0 {
+		s.db.Cards[cIdx].Pct = int((s.db.Cards[cIdx].Amount / s.db.Cards[cIdx].Limit) * 100)
+	}
+	now := time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600))
+	s.db.Transactions = append([]domain.Transaction{{
+		ID: fmt.Sprintf("tx-%d", now.UnixNano()), Title: "ชำระ " + s.db.Cards[cIdx].Name,
+		Category: "ชำระบัตรเครดิต", CategoryTint: "#9b8ec4", Amount: amount,
+		Account: s.db.Accounts[aIdx].Name, Date: now.Format("2006-01-02"),
+		When: "วันนี้ · " + now.Format("15:04 น."), IsToday: true,
+	}}, s.db.Transactions...)
 
 	_ = s.save()
 	return s.db.Cards[cIdx], nil
@@ -605,6 +675,9 @@ func (s *JSONFileStore) AddFixed(fixed domain.FixedExpense) domain.FixedExpense 
 	if fixed.ID == "" {
 		fixed.ID = fmt.Sprintf("fixed-%d", time.Now().UnixNano())
 	}
+	if fixed.Done {
+		fixed.DoneMonth = currentMonthKey()
+	}
 	s.db.Fixed = append(s.db.Fixed, fixed)
 	_ = s.save()
 	return fixed
@@ -615,7 +688,13 @@ func (s *JSONFileStore) ToggleFixed(id string) (domain.FixedExpense, error) {
 	defer s.mu.Unlock()
 	for i, f := range s.db.Fixed {
 		if f.ID == id {
-			s.db.Fixed[i].Done = !s.db.Fixed[i].Done
+			isDoneThisMonth := s.db.Fixed[i].Done && (s.db.Fixed[i].DoneMonth == "" || s.db.Fixed[i].DoneMonth == currentMonthKey())
+			s.db.Fixed[i].Done = !isDoneThisMonth
+			if s.db.Fixed[i].Done {
+				s.db.Fixed[i].DoneMonth = currentMonthKey()
+			} else {
+				s.db.Fixed[i].DoneMonth = ""
+			}
 			_ = s.save()
 			return s.db.Fixed[i], nil
 		}
@@ -683,15 +762,33 @@ func (s *JSONFileStore) PayPlan(planID, fromAccountID string) (domain.Installmen
 	if pIdx == -1 {
 		return domain.InstallmentPlan{}, errors.New("plan not found")
 	}
+	if s.db.Plans[pIdx].PaidCount >= s.db.Plans[pIdx].TotalCount {
+		return domain.InstallmentPlan{}, errors.New("installment plan is already complete")
+	}
 
+	aIdx := -1
 	for i, a := range s.db.Accounts {
 		if a.ID == fromAccountID || a.Name == fromAccountID {
-			s.db.Accounts[i].Amount -= s.db.Plans[pIdx].Amount
+			aIdx = i
 			break
 		}
 	}
+	if aIdx == -1 {
+		return domain.InstallmentPlan{}, errors.New("payment account not found")
+	}
+	if s.db.Accounts[aIdx].Amount < s.db.Plans[pIdx].Amount {
+		return domain.InstallmentPlan{}, errors.New("insufficient balance in payment account")
+	}
+	s.db.Accounts[aIdx].Amount -= s.db.Plans[pIdx].Amount
 
 	s.db.Plans[pIdx].PaidCount++
+	now := time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600))
+	s.db.Transactions = append([]domain.Transaction{{
+		ID: fmt.Sprintf("tx-%d", now.UnixNano()), Title: "จ่ายงวด " + s.db.Plans[pIdx].Name,
+		Category: "ผ่อนชำระ", CategoryTint: "#e06c75", Amount: s.db.Plans[pIdx].Amount,
+		Account: s.db.Accounts[aIdx].Name, Date: now.Format("2006-01-02"),
+		When: "วันนี้ · " + now.Format("15:04 น."), IsToday: true,
+	}}, s.db.Transactions...)
 	_ = s.save()
 	return s.db.Plans[pIdx], nil
 }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { displayTransactionWhen } from '../utils/transactionDate.js';
+import { displayTransactionWhen, isSystemTransaction } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -370,7 +370,7 @@ export default function SearchModal({
                   {t.income ? '+' : '−'}{fmt(t.a)}
                 </div>
 
-                {onEditTransaction && (
+                {onEditTransaction && !isSystemTransaction(t) && (
                   <button
                     onClick={() => {
                       onClose();
@@ -392,7 +392,7 @@ export default function SearchModal({
                   </button>
                 )}
 
-                {onDeleteTransaction && (
+                {onDeleteTransaction && !isSystemTransaction(t) && (
                   <button
                     onClick={() => onDeleteTransaction(t.id)}
                     title="ลบรายการนี้"

@@ -62,7 +62,7 @@ func (s *AppService) AddTransaction(req domain.AddTransactionRequest) (domain.Tr
 
 	dateStr := req.Date
 	if dateStr == "" {
-		dateStr = nowBkk.Format("02 Jan")
+		dateStr = nowBkk.Format("2006-01-02")
 	}
 
 	whenStr := req.When
@@ -79,12 +79,11 @@ func (s *AppService) AddTransaction(req domain.AddTransactionRequest) (domain.Tr
 		Date:         dateStr,
 		When:         whenStr,
 		IsIncome:     req.IsIncome,
-		IsToday:      true,
+		IsToday:      dateStr == nowBkk.Format("2006-01-02"),
 		ReceiptImage: req.Receipt,
 	}
 
-	created := s.repo.AddTransaction(tx)
-	return created, nil
+	return s.repo.AddTransaction(tx)
 }
 
 func (s *AppService) UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error) {
@@ -129,7 +128,7 @@ func (s *AppService) GetDebts() []domain.Debt {
 	return s.repo.GetDebts()
 }
 
-func (s *AppService) AddDebt(debt domain.Debt) domain.Debt {
+func (s *AppService) AddDebt(debt domain.Debt) (domain.Debt, error) {
 	return s.repo.AddDebt(debt)
 }
 
@@ -145,7 +144,7 @@ func (s *AppService) GetAccounts() (accounts []domain.BankAccount, cards []domai
 	return s.repo.GetAccounts()
 }
 
-func (s *AppService) AddAccount(acc domain.BankAccount) domain.BankAccount {
+func (s *AppService) AddAccount(acc domain.BankAccount) (domain.BankAccount, error) {
 	return s.repo.AddAccount(acc)
 }
 
@@ -164,7 +163,7 @@ func (s *AppService) TransferAccount(fromID, toID string, amount float64, note s
 	return s.repo.TransferAccount(fromID, toID, amount, note)
 }
 
-func (s *AppService) AddCard(card domain.CreditCard) domain.CreditCard {
+func (s *AppService) AddCard(card domain.CreditCard) (domain.CreditCard, error) {
 	return s.repo.AddCard(card)
 }
 
@@ -179,7 +178,7 @@ func (s *AppService) DeleteCard(id string) bool {
 	return s.repo.DeleteCard(id)
 }
 
-func (s *AppService) AddFixed(fixed domain.FixedExpense) domain.FixedExpense {
+func (s *AppService) AddFixed(fixed domain.FixedExpense) (domain.FixedExpense, error) {
 	return s.repo.AddFixed(fixed)
 }
 
@@ -195,7 +194,7 @@ func (s *AppService) GetPlans() (monthlyTotal float64, remainingTotal float64, p
 	return s.repo.GetPlans()
 }
 
-func (s *AppService) AddPlan(plan domain.InstallmentPlan) domain.InstallmentPlan {
+func (s *AppService) AddPlan(plan domain.InstallmentPlan) (domain.InstallmentPlan, error) {
 	return s.repo.AddPlan(plan)
 }
 

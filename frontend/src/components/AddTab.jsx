@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ReceiptPreviewModal } from './Modals.jsx';
-import { displayTransactionWhen, isTransactionToday } from '../utils/transactionDate.js';
+import { displayTransactionWhen, isSystemTransaction, isTransactionToday } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -90,6 +90,7 @@ export default function AddTab({
   const [overrideCat, setOverrideCat] = useState(null);
   const [receiptImage, setReceiptImage] = useState(null);
   const [previewReceipt, setPreviewReceipt] = useState(null);
+  const [transactionDate, setTransactionDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -273,15 +274,15 @@ export default function AddTab({
 
   const parsed = parse(draft);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!parsed.amount) return;
     const now = new Date();
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const whenText = `วันนี้ · ${hours}:${minutes} น.`;
-    const dateText = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const dateText = transactionDate;
 
-    onAddTransaction({
+    const saved = await onAddTransaction({
       text: draft,
       t: parsed.name,
       c: parsed.cat,
@@ -293,10 +294,12 @@ export default function AddTab({
       date: dateText,
       when: whenText,
     });
-    setDraft('');
-    setReceiptImage(null);
-    setOverrideAcct(null);
-    setOverrideCat(null);
+    if (saved !== false) {
+      setDraft('');
+      setReceiptImage(null);
+      setOverrideAcct(null);
+      setOverrideCat(null);
+    }
   };
 
   const quickPicks = [
@@ -638,6 +641,12 @@ export default function AddTab({
       </div>
 
       {/* Category Pills (Tap to set category or add new) */}
+      <div>
+        <label style={{ display: 'block', fontSize: '11.5px', color: '#8a8780', marginBottom: '6px' }}>วันที่ทำรายการ</label>
+        <input type="date" value={transactionDate} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setTransactionDate(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #45433c', background: '#302f2c', color: '#e8e5da', borderRadius: '10px', padding: '10px 12px', fontSize: '13px' }} />
+      </div>
+
+      {/* Category Pills (Tap to set category or add new) */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ font: "500 12px/1 'IBM Plex Sans Thai'", color: '#8a8780' }}>
@@ -770,7 +779,7 @@ export default function AddTab({
                 >
                   {e.income ? '+' : '−'}{fmt(e.a)}
                 </div>
-                {onEditTransaction && (
+                {onEditTransaction && !isSystemTransaction(e) && (
                   <button
                     onClick={() => onEditTransaction(e)}
                     title="แก้ไขรายการนี้ (แก้ตัวเลข/หมวดหมู่)"
@@ -788,7 +797,7 @@ export default function AddTab({
                     ✎
                   </button>
                 )}
-                {onDeleteTransaction && (
+                {onDeleteTransaction && !isSystemTransaction(e) && (
                   <button
                     onClick={() => onDeleteTransaction(e.id)}
                     title="ลบรายการนี้ (คืนยอดเงิน)"

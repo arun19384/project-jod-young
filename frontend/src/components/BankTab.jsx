@@ -49,6 +49,11 @@ export default function BankTab({
   const fixed = data?.fixed || [];
   const bankTotal = data?.bankTotal || 0;
   const fixedTotal = fixed.reduce((acc, f) => acc + (f.amt || 0), 0);
+  const cardOutstanding = cards.reduce((sum, card) => sum + (card.amt || 0), 0);
+  const reservedForCards = accounts
+    .filter((account) => /บัตรเครดิต|พักเงิน.*บัตร/i.test(`${account.name} ${account.role}`))
+    .reduce((sum, account) => sum + Math.max(0, account.amt || 0), 0);
+  const uncoveredCardAmount = Math.max(0, cardOutstanding - reservedForCards);
 
   return (
     <div className="animate-fadein" style={{ padding: '6px 22px 26px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
@@ -205,6 +210,13 @@ export default function BankTab({
             + เพิ่มบัตร
           </button>
         </div>
+        {cards.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', padding: '10px', borderRadius: '12px', background: '#292825', border: '1px solid #393833', fontSize: '10.5px', color: '#8a8780' }}>
+            <div>ยอดใช้บัตร<br/><b style={{ color: '#e8e5da', fontSize: '12px' }}>{fmt(cardOutstanding)} บ.</b></div>
+            <div>เงินพักบัตร<br/><b style={{ color: '#6c9a76', fontSize: '12px' }}>{fmt(reservedForCards)} บ.</b></div>
+            <div>ยังไม่ได้กัน<br/><b style={{ color: uncoveredCardAmount > 0 ? '#d97757' : '#6c9a76', fontSize: '12px' }}>{fmt(uncoveredCardAmount)} บ.</b></div>
+          </div>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {cards.length === 0 ? (
             <div style={{ padding: '12px', textAlign: 'center', color: '#78756e', fontSize: '12px' }}>
@@ -244,7 +256,7 @@ export default function BankTab({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ font: "500 15px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>{c.name}</span>
                         <span style={{ fontSize: '10px', color: '#9b8ec4', background: 'rgba(155,142,196,0.15)', padding: '1px 6px', borderRadius: '4px', fontWeight: '500' }}>
-                          📄 ดูรายการ ({c.lines ? c.lines.length : 0})
+                          📄 ดูรายการ ({transactions.filter((tx) => tx.acct === c.name || tx.acct === c.id).length})
                         </span>
                       </div>
                       <div style={{ font: "400 11px/1.3 'IBM Plex Mono', monospace", color: '#78756e', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>

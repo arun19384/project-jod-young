@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { isSystemTransaction, isTransactionInCurrentMonth } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -19,7 +20,7 @@ export default function AnalyticsChart({ transactions = [] }) {
 
   // Group transactions by category (only expenses, excluding income)
   const { categoryData, totalExpense } = useMemo(() => {
-    const expenseTx = transactions.filter((t) => !t.income);
+    const expenseTx = transactions.filter((t) => !t.income && !isSystemTransaction(t) && isTransactionInCurrentMonth(t));
     const groups = {};
     let total = 0;
 

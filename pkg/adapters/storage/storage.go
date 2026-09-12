@@ -162,6 +162,27 @@ func maskURL(raw string) string {
 	return re.ReplaceAllString(raw, ":****@")
 }
 
+func isCurrentMonth(dateText string) bool {
+	now := time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600))
+	for _, layout := range []string{"2006-01-02", "02 Jan", "2 Jan"} {
+		if parsed, err := time.ParseInLocation(layout, dateText, now.Location()); err == nil {
+			if layout != "2006-01-02" {
+				parsed = time.Date(now.Year(), parsed.Month(), parsed.Day(), 0, 0, 0, 0, now.Location())
+			}
+			return parsed.Year() == now.Year() && parsed.Month() == now.Month()
+		}
+	}
+	return true
+}
+
+func countsAsSpending(category string) bool {
+	return category != "โอนเงิน" && category != "ชำระบัตรเครดิต"
+}
+
+func currentMonthKey() string {
+	return time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01")
+}
+
 func (r *StorageRepository) initSchema() error {
 	if !r.isMySQL || r.sqlDB == nil {
 		return nil
@@ -222,7 +243,8 @@ func (r *StorageRepository) initSchema() error {
 			name VARCHAR(100) NOT NULL,
 			amount DOUBLE NOT NULL,
 			day VARCHAR(20) NOT NULL,
-			done BOOLEAN NOT NULL DEFAULT 0
+			done BOOLEAN NOT NULL DEFAULT 0,
+			done_month VARCHAR(7) NOT NULL DEFAULT ''
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
 
 		`CREATE TABLE IF NOT EXISTS installment_plans (
@@ -249,6 +271,8 @@ func (r *StorageRepository) initSchema() error {
 	}
 
 	_, _ = r.sqlDB.Exec("ALTER TABLE transactions ADD COLUMN IF NOT EXISTS receipt_image MEDIUMTEXT")
+	_, _ = r.sqlDB.Exec("ALTER TABLE fixed_expenses ADD COLUMN IF NOT EXISTS done_month VARCHAR(7) NOT NULL DEFAULT ''")
+	_, _ = r.sqlDB.Exec("UPDATE fixed_expenses SET done_month = ? WHERE done = 1 AND done_month = ''", currentMonthKey())
 	_, _ = r.sqlDB.Exec("UPDATE accounts SET name = 'บัญชีใช้จ่าย' WHERE name = 'เงินสด/บัญชีหลัก' OR name = 'บัญชีหลัก' OR id = 'acct-main'")
 	_, _ = r.sqlDB.Exec("UPDATE transactions SET account = 'บัญชีใช้จ่าย' WHERE account = 'เงินสด/บัญชีหลัก' OR account = 'บัญชีหลัก'")
 
@@ -257,6 +281,10 @@ func (r *StorageRepository) initSchema() error {
 }
 
 func (r *StorageRepository) seedIfEmpty() {
+	var seedDisabled string
+	if err := r.sqlDB.QueryRow("SELECT v FROM app_settings WHERE k = 'seed_disabled'").Scan(&seedDisabled); err == nil && seedDisabled == "1" {
+		return
+	}
 	var count int
 	_ = r.sqlDB.QueryRow("SELECT COUNT(*) FROM accounts").Scan(&count)
 	var cardCount int
@@ -280,8 +308,12 @@ func (r *StorageRepository) seedIfEmpty() {
 	}
 
 	for _, f := range initialDB.Fixed {
-		_, _ = r.sqlDB.Exec("INSERT INTO fixed_expenses (id, name, amount, day, done) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE amount=amount",
-			f.ID, f.Name, f.Amount, f.Day, f.Done)
+		doneMonth := f.DoneMonth
+		if f.Done && doneMonth == "" {
+			doneMonth = currentMonthKey()
+		}
+		_, _ = r.sqlDB.Exec("INSERT INTO fixed_expenses (id, name, amount, day, done, done_month) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE amount=amount",
+			f.ID, f.Name, f.Amount, f.Day, f.Done, doneMonth)
 	}
 
 	for _, p := range initialDB.Plans {
@@ -322,13 +354,14 @@ func (r *StorageRepository) GetSummary() domain.SummaryResponse {
 	}
 
 	var income, spentTx float64
-	rows, err := r.sqlDB.Query("SELECT amount, is_income FROM transactions")
+	rows, err := r.sqlDB.Query("SELECT amount, is_income, category, date FROM transactions")
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var a float64
 			var inc bool
-			if err := rows.Scan(&a, &inc); err == nil {
+			var category, dateText string
+			if err := rows.Scan(&a, &inc, &category, &dateText); err == nil && isCurrentMonth(dateText) && countsAsSpending(category) {
 				if inc {
 					income += a
 				} else {
@@ -343,7 +376,7 @@ func (r *StorageRepository) GetSummary() domain.SummaryResponse {
 
 	var fixedTotal float64
 	var fixedDone, fixedTotalCount int
-	fRows, err := r.sqlDB.Query("SELECT amount, done FROM fixed_expenses")
+	fRows, err := r.sqlDB.Query("SELECT amount, done_month = ? FROM fixed_expenses", currentMonthKey())
 	if err == nil {
 		defer fRows.Close()
 		for fRows.Next() {
@@ -376,7 +409,7 @@ func (r *StorageRepository) GetSummary() domain.SummaryResponse {
 		}
 	}
 
-	totalSpent := spentTx + fixedTotal + planMonthly
+	totalSpent := spentTx
 	left := income - totalSpent
 	spentPct := 0
 	if income > 0 {
@@ -403,7 +436,7 @@ func (r *StorageRepository) GetSummary() domain.SummaryResponse {
 	}
 
 	dues := make([]domain.DueItem, 0)
-	fDueRows, err := r.sqlDB.Query("SELECT day, name, amount FROM fixed_expenses WHERE done = 0")
+	fDueRows, err := r.sqlDB.Query("SELECT day, name, amount FROM fixed_expenses WHERE done_month <> ?", currentMonthKey())
 	if err == nil {
 		defer fDueRows.Close()
 		for fDueRows.Next() {
@@ -497,68 +530,117 @@ func (r *StorageRepository) GetTransactions() []domain.Transaction {
 	return list
 }
 
-func (r *StorageRepository) AddTransaction(tx domain.Transaction) domain.Transaction {
+func (r *StorageRepository) AddTransaction(tx domain.Transaction) (domain.Transaction, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	created := r.localStore.AddTransaction(tx)
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.AddTransaction(tx)
+	}
 
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec(`INSERT INTO transactions 
-			(id, title, category, category_tint, amount, account, date, when_text, is_income, is_today, receipt_image) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			created.ID, created.Title, created.Category, created.CategoryTint, created.Amount, created.Account, created.Date, created.When, created.IsIncome, created.IsToday, created.ReceiptImage)
+	now := time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600))
+	if tx.ID == "" {
+		tx.ID = fmt.Sprintf("tx-%d", now.UnixNano())
+	}
+	if tx.Date == "" {
+		tx.Date = now.Format("2006-01-02")
+	}
+	if tx.When == "" {
+		tx.When = "วันนี้ · " + now.Format("15:04 น.")
+	}
+	tx.IsToday = tx.Date == now.Format("2006-01-02")
 
-		if created.IsIncome {
-			_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount + ? WHERE name = ? OR id = ?", created.Amount, created.Account, created.Account)
-		} else {
-			res, _ := r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE name = ? OR id = ?", created.Amount, created.Account, created.Account)
-			if n, _ := res.RowsAffected(); n == 0 {
-				_, _ = r.sqlDB.Exec("UPDATE cards SET amount = amount + ? WHERE name = ? OR id = ?", created.Amount, created.Account, created.Account)
-			}
+	dbtx, err := r.sqlDB.Begin()
+	if err != nil {
+		return domain.Transaction{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer dbtx.Rollback()
+	if err := applyTransactionEffect(dbtx, tx, false); err != nil {
+		return domain.Transaction{}, err
+	}
+	if _, err := dbtx.Exec(`INSERT INTO transactions
+		(id, title, category, category_tint, amount, account, date, when_text, is_income, is_today, receipt_image)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, tx.ID, tx.Title, tx.Category, tx.CategoryTint, tx.Amount,
+		tx.Account, tx.Date, tx.When, tx.IsIncome, tx.IsToday, tx.ReceiptImage); err != nil {
+		return domain.Transaction{}, fmt.Errorf("save transaction: %w", err)
+	}
+	if err := dbtx.Commit(); err != nil {
+		return domain.Transaction{}, fmt.Errorf("commit transaction: %w", err)
+	}
+	return tx, nil
+}
+
+func applyTransactionEffect(dbtx *sql.Tx, tx domain.Transaction, reverse bool) error {
+	delta := tx.Amount
+	if (!tx.IsIncome && !reverse) || (tx.IsIncome && reverse) {
+		delta = -tx.Amount
+	}
+
+	if delta < 0 {
+		res, err := dbtx.Exec("UPDATE accounts SET amount = amount + ? WHERE (name = ? OR id = ?) AND amount + ? >= 0", delta, tx.Account, tx.Account, delta)
+		if err != nil {
+			return fmt.Errorf("update account balance: %w", err)
+		}
+		if n, _ := res.RowsAffected(); n > 0 {
+			return nil
+		}
+	} else {
+		res, err := dbtx.Exec("UPDATE accounts SET amount = amount + ? WHERE name = ? OR id = ?", delta, tx.Account, tx.Account)
+		if err != nil {
+			return fmt.Errorf("update account balance: %w", err)
+		}
+		if n, _ := res.RowsAffected(); n > 0 {
+			return nil
 		}
 	}
 
-	return created
+	if tx.IsIncome {
+		return fmt.Errorf("account not found")
+	}
+	cardDelta := tx.Amount
+	if reverse {
+		cardDelta = -tx.Amount
+	}
+	res, err := dbtx.Exec(`UPDATE cards SET amount = GREATEST(0, amount + ?),
+		pct = CASE WHEN credit_limit > 0 THEN ROUND((GREATEST(0, amount + ?) / credit_limit) * 100) ELSE 0 END,
+		status = CASE WHEN GREATEST(0, amount + ?) = 0 THEN 'ชำระแล้ว' ELSE 'ค้างชำระ' END
+		WHERE name = ? OR id = ?`, cardDelta, cardDelta, cardDelta, tx.Account, tx.Account)
+	if err != nil {
+		return fmt.Errorf("update card balance: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("account or card not found, or account balance is insufficient")
+	}
+	return nil
 }
 
 func (r *StorageRepository) UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	updated, err := r.localStore.UpdateTransaction(id, req)
-	if err != nil && (!r.isMySQL || r.sqlDB == nil) {
-		return domain.Transaction{}, err
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.UpdateTransaction(id, req)
 	}
 
 	if r.isMySQL && r.sqlDB != nil {
+		dbtx, err := r.sqlDB.Begin()
+		if err != nil {
+			return domain.Transaction{}, fmt.Errorf("begin update: %w", err)
+		}
+		defer dbtx.Rollback()
 		var oldTitle, oldCategory, oldTint, oldAccount, oldDate, oldWhen, oldReceipt string
 		var oldAmount float64
 		var oldIsIncome bool
 
-		scanErr := r.sqlDB.QueryRow(`SELECT title, category, category_tint, amount, account, date, when_text, is_income, COALESCE(receipt_image, '') 
-			FROM transactions WHERE id = ?`, id).Scan(
+		scanErr := dbtx.QueryRow(`SELECT title, category, category_tint, amount, account, date, when_text, is_income, COALESCE(receipt_image, '')
+			FROM transactions WHERE id = ? FOR UPDATE`, id).Scan(
 			&oldTitle, &oldCategory, &oldTint, &oldAmount, &oldAccount, &oldDate, &oldWhen, &oldIsIncome, &oldReceipt,
 		)
 		if scanErr != nil {
-			scanErr = r.sqlDB.QueryRow(`SELECT title, category, category_tint, amount, account, date, when_text, is_income 
-				FROM transactions WHERE id = ?`, id).Scan(
-				&oldTitle, &oldCategory, &oldTint, &oldAmount, &oldAccount, &oldDate, &oldWhen, &oldIsIncome,
-			)
-			if scanErr != nil {
-				return updated, nil
-			}
+			return domain.Transaction{}, fmt.Errorf("transaction not found")
 		}
-
-		// 1. Revert old transaction in MySQL
-		if oldIsIncome {
-			_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE name = ? OR id = ?", oldAmount, oldAccount, oldAccount)
-		} else {
-			res, _ := r.sqlDB.Exec("UPDATE accounts SET amount = amount + ? WHERE name = ? OR id = ?", oldAmount, oldAccount, oldAccount)
-			if n, _ := res.RowsAffected(); n == 0 {
-				_, _ = r.sqlDB.Exec("UPDATE cards SET amount = GREATEST(0, amount - ?) WHERE name = ? OR id = ?", oldAmount, oldAccount, oldAccount)
-				_, _ = r.sqlDB.Exec("UPDATE cards SET pct = ROUND((amount / credit_limit) * 100) WHERE credit_limit > 0 AND (name = ? OR id = ?)", oldAccount, oldAccount)
-			}
+		if !countsAsSpending(oldCategory) {
+			return domain.Transaction{}, fmt.Errorf("system transactions cannot be edited")
 		}
 
 		// Determine new values
@@ -572,7 +654,7 @@ func (r *StorageRepository) UpdateTransaction(id string, req domain.UpdateTransa
 			Date:         req.Date,
 			When:         req.When,
 			IsIncome:     req.IsIncome,
-			IsToday:      true,
+			IsToday:      req.Date == time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02"),
 			ReceiptImage: req.Receipt,
 		}
 		if newTx.Title == "" {
@@ -599,63 +681,73 @@ func (r *StorageRepository) UpdateTransaction(id string, req domain.UpdateTransa
 		if newTx.ReceiptImage == "" {
 			newTx.ReceiptImage = oldReceipt
 		}
+		newTx.IsToday = newTx.Date == time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01-02")
 
-		// 2. Apply new transaction in MySQL
-		if newTx.IsIncome {
-			_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount + ? WHERE name = ? OR id = ?", newTx.Amount, newTx.Account, newTx.Account)
-		} else {
-			res, _ := r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE name = ? OR id = ?", newTx.Amount, newTx.Account, newTx.Account)
-			if n, _ := res.RowsAffected(); n == 0 {
-				_, _ = r.sqlDB.Exec("UPDATE cards SET amount = amount + ? WHERE name = ? OR id = ?", newTx.Amount, newTx.Account, newTx.Account)
-				_, _ = r.sqlDB.Exec("UPDATE cards SET pct = ROUND((amount / credit_limit) * 100) WHERE credit_limit > 0 AND (name = ? OR id = ?)", newTx.Account, newTx.Account)
-			}
+		oldTx := domain.Transaction{Amount: oldAmount, Account: oldAccount, IsIncome: oldIsIncome}
+		if err := applyTransactionEffect(dbtx, oldTx, true); err != nil {
+			return domain.Transaction{}, fmt.Errorf("revert old transaction: %w", err)
+		}
+		if err := applyTransactionEffect(dbtx, newTx, false); err != nil {
+			return domain.Transaction{}, err
 		}
 
-		// 3. Update MySQL transaction record
-		_, updateErr := r.sqlDB.Exec(`UPDATE transactions SET 
-			title = ?, category = ?, category_tint = ?, amount = ?, account = ?, date = ?, when_text = ?, is_income = ?, receipt_image = ?
+		_, updateErr := dbtx.Exec(`UPDATE transactions SET
+			title = ?, category = ?, category_tint = ?, amount = ?, account = ?, date = ?, when_text = ?, is_income = ?, is_today = ?, receipt_image = ?
 			WHERE id = ?`,
-			newTx.Title, newTx.Category, newTx.CategoryTint, newTx.Amount, newTx.Account, newTx.Date, newTx.When, newTx.IsIncome, newTx.ReceiptImage,
+			newTx.Title, newTx.Category, newTx.CategoryTint, newTx.Amount, newTx.Account, newTx.Date, newTx.When, newTx.IsIncome, newTx.IsToday, newTx.ReceiptImage,
 			id)
 		if updateErr != nil {
-			_, _ = r.sqlDB.Exec(`UPDATE transactions SET 
-				title = ?, category = ?, category_tint = ?, amount = ?, account = ?, date = ?, when_text = ?, is_income = ?
-				WHERE id = ?`,
-				newTx.Title, newTx.Category, newTx.CategoryTint, newTx.Amount, newTx.Account, newTx.Date, newTx.When, newTx.IsIncome,
-				id)
+			return domain.Transaction{}, fmt.Errorf("update transaction: %w", updateErr)
+		}
+		if err := dbtx.Commit(); err != nil {
+			return domain.Transaction{}, fmt.Errorf("commit update: %w", err)
 		}
 
 		return newTx, nil
 	}
 
-	return updated, nil
+	return domain.Transaction{}, fmt.Errorf("storage unavailable")
 }
 
 func (r *StorageRepository) DeleteTransaction(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	ok := r.localStore.DeleteTransaction(id)
-
-	if r.isMySQL && r.sqlDB != nil {
-		var amount float64
-		var account string
-		var isIncome bool
-		err := r.sqlDB.QueryRow("SELECT amount, account, is_income FROM transactions WHERE id = ?", id).Scan(&amount, &account, &isIncome)
-		if err == nil {
-			if isIncome {
-				_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE name = ? OR id = ?", amount, account, account)
-			} else {
-				res, _ := r.sqlDB.Exec("UPDATE accounts SET amount = amount + ? WHERE name = ? OR id = ?", amount, account, account)
-				if n, _ := res.RowsAffected(); n == 0 {
-					_, _ = r.sqlDB.Exec("UPDATE cards SET amount = GREATEST(0, amount - ?) WHERE name = ? OR id = ?", amount, account, account)
-				}
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.DeleteTransaction(id)
+	}
+	dbtx, err := r.sqlDB.Begin()
+	if err != nil {
+		return false
+	}
+	defer dbtx.Rollback()
+	var amount float64
+	var account, category string
+	var isIncome bool
+	if err := dbtx.QueryRow("SELECT amount, account, is_income, category FROM transactions WHERE id = ? FOR UPDATE", id).Scan(&amount, &account, &isIncome, &category); err != nil {
+		return false
+	}
+	if !countsAsSpending(category) {
+		return false
+	}
+	if isIncome {
+		if _, err := dbtx.Exec("UPDATE accounts SET amount = amount - ? WHERE name = ? OR id = ?", amount, account, account); err != nil {
+			return false
+		}
+	} else {
+		res, err := dbtx.Exec("UPDATE accounts SET amount = amount + ? WHERE name = ? OR id = ?", amount, account, account)
+		if err != nil {
+			return false
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			if _, err := dbtx.Exec("UPDATE cards SET amount = GREATEST(0, amount - ?), pct = ROUND((GREATEST(0, amount - ?) / credit_limit) * 100) WHERE name = ? OR id = ?", amount, amount, account, account); err != nil {
+				return false
 			}
-			_, _ = r.sqlDB.Exec("DELETE FROM transactions WHERE id = ?", id)
 		}
 	}
-
-	return ok
+	if _, err := dbtx.Exec("DELETE FROM transactions WHERE id = ?", id); err != nil {
+		return false
+	}
+	return dbtx.Commit() == nil
 }
 
 func (r *StorageRepository) GetDebts() []domain.Debt {
@@ -678,26 +770,40 @@ func (r *StorageRepository) GetDebts() []domain.Debt {
 	return debts
 }
 
-func (r *StorageRepository) AddDebt(deb domain.Debt) domain.Debt {
+func (r *StorageRepository) AddDebt(deb domain.Debt) (domain.Debt, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	created := r.localStore.AddDebt(deb)
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("INSERT INTO debts (id, name, what, amount, cleared) VALUES (?, ?, ?, ?, ?)",
-			created.ID, created.Name, created.What, created.Amount, created.Cleared)
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.AddDebt(deb), nil
 	}
-	return created
+	if deb.ID == "" {
+		deb.ID = fmt.Sprintf("debt-%d", time.Now().UnixNano())
+	}
+	_, err := r.sqlDB.Exec("INSERT INTO debts (id, name, what, amount, cleared) VALUES (?, ?, ?, ?, ?)", deb.ID, deb.Name, deb.What, deb.Amount, deb.Cleared)
+	if err != nil {
+		return domain.Debt{}, fmt.Errorf("save debt: %w", err)
+	}
+	return deb, nil
 }
 
 func (r *StorageRepository) ToggleDebt(id string) (domain.Debt, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.isMySQL && r.sqlDB != nil {
+		res, err := r.sqlDB.Exec("UPDATE debts SET cleared = NOT cleared WHERE id = ?", id)
+		if err != nil {
+			return domain.Debt{}, err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return domain.Debt{}, fmt.Errorf("debt not found")
+		}
+		var updated domain.Debt
+		err = r.sqlDB.QueryRow("SELECT id, name, what, amount, cleared FROM debts WHERE id = ?", id).Scan(&updated.ID, &updated.Name, &updated.What, &updated.Amount, &updated.Cleared)
+		return updated, err
+	}
 	updated, err := r.localStore.ToggleDebt(id)
 	if err != nil {
 		return domain.Debt{}, err
-	}
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("UPDATE debts SET cleared = ? WHERE id = ?", updated.Cleared, id)
 	}
 	return updated, nil
 }
@@ -705,10 +811,15 @@ func (r *StorageRepository) ToggleDebt(id string) (domain.Debt, error) {
 func (r *StorageRepository) DeleteDebt(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	ok := r.localStore.DeleteDebt(id)
 	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("DELETE FROM debts WHERE id = ?", id)
+		res, err := r.sqlDB.Exec("DELETE FROM debts WHERE id = ?", id)
+		if err != nil {
+			return false
+		}
+		n, _ := res.RowsAffected()
+		return n > 0
 	}
+	ok := r.localStore.DeleteDebt(id)
 	return ok
 }
 
@@ -751,12 +862,12 @@ func (r *StorageRepository) GetAccounts() ([]domain.BankAccount, []domain.Credit
 	}
 
 	fixed := make([]domain.FixedExpense, 0)
-	fRows, err := r.sqlDB.Query("SELECT id, name, amount, day, done FROM fixed_expenses")
+	fRows, err := r.sqlDB.Query("SELECT id, name, amount, day, done_month = ?, done_month FROM fixed_expenses", currentMonthKey())
 	if err == nil {
 		defer fRows.Close()
 		for fRows.Next() {
 			var f domain.FixedExpense
-			if err := fRows.Scan(&f.ID, &f.Name, &f.Amount, &f.Day, &f.Done); err == nil {
+			if err := fRows.Scan(&f.ID, &f.Name, &f.Amount, &f.Day, &f.Done, &f.DoneMonth); err == nil {
 				fixed = append(fixed, f)
 			}
 		}
@@ -765,16 +876,20 @@ func (r *StorageRepository) GetAccounts() ([]domain.BankAccount, []domain.Credit
 	return accounts, cards, fixed, totalBank
 }
 
-func (r *StorageRepository) AddAccount(acc domain.BankAccount) domain.BankAccount {
+func (r *StorageRepository) AddAccount(acc domain.BankAccount) (domain.BankAccount, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	created := r.localStore.AddAccount(acc)
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("INSERT INTO accounts (id, name, role, amount, tint) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = ?, role = ?, amount = ?, tint = ?",
-			created.ID, created.Name, created.Role, created.Amount, created.Tint,
-			created.Name, created.Role, created.Amount, created.Tint)
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.AddAccount(acc), nil
 	}
-	return created
+	if acc.ID == "" {
+		acc.ID = fmt.Sprintf("acct-%d", time.Now().UnixNano())
+	}
+	_, err := r.sqlDB.Exec("INSERT INTO accounts (id, name, role, amount, tint) VALUES (?, ?, ?, ?, ?)", acc.ID, acc.Name, acc.Role, acc.Amount, acc.Tint)
+	if err != nil {
+		return domain.BankAccount{}, fmt.Errorf("save account: %w", err)
+	}
+	return acc, nil
 }
 
 func (r *StorageRepository) UpdateAccount(id string, acc domain.BankAccount) (domain.BankAccount, error) {
@@ -867,7 +982,7 @@ func (r *StorageRepository) TransferAccount(fromID, toID string, amount float64,
 		(id, title, category, category_tint, amount, account, date, when_text, is_income, is_today)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		txID, title, "โอนเงิน", "#7fa3c9", amount, from.Name,
-		now.Format("02 Jan"), "วันนี้ · "+now.Format("15:04 น."), false, true)
+		now.Format("2006-01-02"), "วันนี้ · "+now.Format("15:04 น."), false, true)
 	if err != nil {
 		return fmt.Errorf("record transfer: %w", err)
 	}
@@ -877,66 +992,134 @@ func (r *StorageRepository) TransferAccount(fromID, toID string, amount float64,
 	return nil
 }
 
-func (r *StorageRepository) AddCard(card domain.CreditCard) domain.CreditCard {
+func (r *StorageRepository) AddCard(card domain.CreditCard) (domain.CreditCard, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	created := r.localStore.AddCard(card)
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec(`INSERT INTO cards 
-			(id, name, cut_day, due_date, amount, credit_limit, pct, status, tint, chip_bg, pdf_name, pdf_label, pdf_summary) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			created.ID, created.Name, created.CutDay, created.DueDate, created.Amount, created.Limit, created.Pct, created.Status, created.Tint, created.ChipBg, created.PdfName, created.PdfLabel, created.PdfSummary)
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.AddCard(card), nil
 	}
-	return created
+	if card.ID == "" {
+		card.ID = fmt.Sprintf("card-%d", time.Now().UnixNano())
+	}
+	_, err := r.sqlDB.Exec(`INSERT INTO cards
+		(id, name, cut_day, due_date, amount, credit_limit, pct, status, tint, chip_bg, pdf_name, pdf_label, pdf_summary)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, card.ID, card.Name, card.CutDay, card.DueDate, card.Amount,
+		card.Limit, card.Pct, card.Status, card.Tint, card.ChipBg, card.PdfName, card.PdfLabel, card.PdfSummary)
+	if err != nil {
+		return domain.CreditCard{}, fmt.Errorf("save card: %w", err)
+	}
+	return card, nil
 }
 
 func (r *StorageRepository) PayCard(cardID, fromAccountID string, amount float64) (domain.CreditCard, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	updated, err := r.localStore.PayCard(cardID, fromAccountID, amount)
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.PayCard(cardID, fromAccountID, amount)
+	}
+	dbtx, err := r.sqlDB.Begin()
 	if err != nil {
 		return domain.CreditCard{}, err
 	}
-
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE id = ? OR name = ?", amount, fromAccountID, fromAccountID)
-		_, _ = r.sqlDB.Exec("UPDATE cards SET amount = GREATEST(0, amount - ?), status = 'ชำระแล้ว' WHERE id = ?", amount, cardID)
+	defer dbtx.Rollback()
+	var accountID, accountName string
+	var balance float64
+	if err := dbtx.QueryRow("SELECT id, name, amount FROM accounts WHERE id = ? OR name = ? LIMIT 1 FOR UPDATE", fromAccountID, fromAccountID).Scan(&accountID, &accountName, &balance); err != nil {
+		return domain.CreditCard{}, fmt.Errorf("payment account not found")
 	}
-
+	var updated domain.CreditCard
+	if err := dbtx.QueryRow("SELECT id, name, cut_day, due_date, amount, credit_limit, pct, status, tint, chip_bg, pdf_name, pdf_label, pdf_summary FROM cards WHERE id = ? FOR UPDATE", cardID).Scan(&updated.ID, &updated.Name, &updated.CutDay, &updated.DueDate, &updated.Amount, &updated.Limit, &updated.Pct, &updated.Status, &updated.Tint, &updated.ChipBg, &updated.PdfName, &updated.PdfLabel, &updated.PdfSummary); err != nil {
+		return domain.CreditCard{}, fmt.Errorf("card not found")
+	}
+	if amount <= 0 || amount > updated.Amount {
+		return domain.CreditCard{}, fmt.Errorf("payment exceeds outstanding balance")
+	}
+	if balance < amount {
+		return domain.CreditCard{}, fmt.Errorf("insufficient balance in payment account")
+	}
+	remaining := updated.Amount - amount
+	status := "ค้างชำระ"
+	if remaining <= 0 {
+		remaining = 0
+		status = "ชำระแล้ว"
+	}
+	pct := 0
+	if updated.Limit > 0 {
+		pct = int((remaining / updated.Limit) * 100)
+	}
+	if _, err := dbtx.Exec("UPDATE accounts SET amount = amount - ? WHERE id = ?", amount, accountID); err != nil {
+		return domain.CreditCard{}, err
+	}
+	if _, err := dbtx.Exec("UPDATE cards SET amount = ?, pct = ?, status = ? WHERE id = ?", remaining, pct, status, cardID); err != nil {
+		return domain.CreditCard{}, err
+	}
+	now := time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600))
+	_, err = dbtx.Exec(`INSERT INTO transactions (id, title, category, category_tint, amount, account, date, when_text, is_income, is_today) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, fmt.Sprintf("tx-%d", now.UnixNano()), "ชำระ "+updated.Name, "ชำระบัตรเครดิต", "#9b8ec4", amount, accountName, now.Format("2006-01-02"), "วันนี้ · "+now.Format("15:04 น."), false, true)
+	if err != nil {
+		return domain.CreditCard{}, err
+	}
+	if err := dbtx.Commit(); err != nil {
+		return domain.CreditCard{}, err
+	}
+	updated.Amount, updated.Pct, updated.Status = remaining, pct, status
 	return updated, nil
 }
 
 func (r *StorageRepository) DeleteCard(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	ok := r.localStore.DeleteCard(id)
 	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("DELETE FROM cards WHERE id = ?", id)
+		res, err := r.sqlDB.Exec("DELETE FROM cards WHERE id = ?", id)
+		if err != nil {
+			return false
+		}
+		n, _ := res.RowsAffected()
+		return n > 0
 	}
+	ok := r.localStore.DeleteCard(id)
 	return ok
 }
 
-func (r *StorageRepository) AddFixed(fixed domain.FixedExpense) domain.FixedExpense {
+func (r *StorageRepository) AddFixed(fixed domain.FixedExpense) (domain.FixedExpense, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	created := r.localStore.AddFixed(fixed)
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("INSERT INTO fixed_expenses (id, name, amount, day, done) VALUES (?, ?, ?, ?, ?)",
-			created.ID, created.Name, created.Amount, created.Day, created.Done)
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.AddFixed(fixed), nil
 	}
-	return created
+	if fixed.ID == "" {
+		fixed.ID = fmt.Sprintf("fixed-%d", time.Now().UnixNano())
+	}
+	if fixed.Done {
+		fixed.DoneMonth = currentMonthKey()
+	}
+	_, err := r.sqlDB.Exec("INSERT INTO fixed_expenses (id, name, amount, day, done, done_month) VALUES (?, ?, ?, ?, ?, ?)",
+		fixed.ID, fixed.Name, fixed.Amount, fixed.Day, fixed.Done, fixed.DoneMonth)
+	if err != nil {
+		return domain.FixedExpense{}, fmt.Errorf("save fixed expense: %w", err)
+	}
+	return fixed, nil
 }
 
 func (r *StorageRepository) ToggleFixed(id string) (domain.FixedExpense, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.isMySQL && r.sqlDB != nil {
+		month := currentMonthKey()
+		res, err := r.sqlDB.Exec("UPDATE fixed_expenses SET done = IF(done_month = ?, 0, 1), done_month = IF(done_month = ?, '', ?) WHERE id = ?", month, month, month, id)
+		if err != nil {
+			return domain.FixedExpense{}, err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return domain.FixedExpense{}, fmt.Errorf("fixed expense not found")
+		}
+		var updated domain.FixedExpense
+		err = r.sqlDB.QueryRow("SELECT id, name, amount, day, done_month = ?, done_month FROM fixed_expenses WHERE id = ?", month, id).Scan(&updated.ID, &updated.Name, &updated.Amount, &updated.Day, &updated.Done, &updated.DoneMonth)
+		return updated, err
+	}
 	updated, err := r.localStore.ToggleFixed(id)
 	if err != nil {
 		return domain.FixedExpense{}, err
-	}
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("UPDATE fixed_expenses SET done = ? WHERE id = ?", updated.Done, id)
 	}
 	return updated, nil
 }
@@ -944,10 +1127,15 @@ func (r *StorageRepository) ToggleFixed(id string) (domain.FixedExpense, error) 
 func (r *StorageRepository) DeleteFixed(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	ok := r.localStore.DeleteFixed(id)
 	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("DELETE FROM fixed_expenses WHERE id = ?", id)
+		res, err := r.sqlDB.Exec("DELETE FROM fixed_expenses WHERE id = ?", id)
+		if err != nil {
+			return false
+		}
+		n, _ := res.RowsAffected()
+		return n > 0
 	}
+	ok := r.localStore.DeleteFixed(id)
 	return ok
 }
 
@@ -982,41 +1170,78 @@ func (r *StorageRepository) GetPlans() (monthlyTotal float64, remainingTotal flo
 	return monthlyTotal, remainingTotal, plans
 }
 
-func (r *StorageRepository) AddPlan(plan domain.InstallmentPlan) domain.InstallmentPlan {
+func (r *StorageRepository) AddPlan(plan domain.InstallmentPlan) (domain.InstallmentPlan, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	created := r.localStore.AddPlan(plan)
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("INSERT INTO installment_plans (id, name, amount, paid_count, total_count, note, ends_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-			created.ID, created.Name, created.Amount, created.PaidCount, created.TotalCount, created.Note, created.EndsAt)
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.AddPlan(plan), nil
 	}
-	return created
+	if plan.ID == "" {
+		plan.ID = fmt.Sprintf("plan-%d", time.Now().UnixNano())
+	}
+	_, err := r.sqlDB.Exec("INSERT INTO installment_plans (id, name, amount, paid_count, total_count, note, ends_at) VALUES (?, ?, ?, ?, ?, ?, ?)", plan.ID, plan.Name, plan.Amount, plan.PaidCount, plan.TotalCount, plan.Note, plan.EndsAt)
+	if err != nil {
+		return domain.InstallmentPlan{}, fmt.Errorf("save plan: %w", err)
+	}
+	return plan, nil
 }
 
 func (r *StorageRepository) PayPlan(planID, fromAccountID string) (domain.InstallmentPlan, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	updated, err := r.localStore.PayPlan(planID, fromAccountID)
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.PayPlan(planID, fromAccountID)
+	}
+	dbtx, err := r.sqlDB.Begin()
 	if err != nil {
 		return domain.InstallmentPlan{}, err
 	}
-
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE id = ? OR name = ?", updated.Amount, fromAccountID, fromAccountID)
-		_, _ = r.sqlDB.Exec("UPDATE installment_plans SET paid_count = paid_count + 1 WHERE id = ?", planID)
+	defer dbtx.Rollback()
+	var updated domain.InstallmentPlan
+	if err := dbtx.QueryRow("SELECT id, name, amount, paid_count, total_count, note, ends_at FROM installment_plans WHERE id = ? FOR UPDATE", planID).Scan(&updated.ID, &updated.Name, &updated.Amount, &updated.PaidCount, &updated.TotalCount, &updated.Note, &updated.EndsAt); err != nil {
+		return domain.InstallmentPlan{}, fmt.Errorf("installment plan not found")
 	}
-
+	if updated.PaidCount >= updated.TotalCount {
+		return domain.InstallmentPlan{}, fmt.Errorf("installment plan is already complete")
+	}
+	var accountID, accountName string
+	var balance float64
+	if err := dbtx.QueryRow("SELECT id, name, amount FROM accounts WHERE id = ? OR name = ? LIMIT 1 FOR UPDATE", fromAccountID, fromAccountID).Scan(&accountID, &accountName, &balance); err != nil {
+		return domain.InstallmentPlan{}, fmt.Errorf("payment account not found")
+	}
+	if balance < updated.Amount {
+		return domain.InstallmentPlan{}, fmt.Errorf("insufficient balance in payment account")
+	}
+	if _, err := dbtx.Exec("UPDATE accounts SET amount = amount - ? WHERE id = ?", updated.Amount, accountID); err != nil {
+		return domain.InstallmentPlan{}, err
+	}
+	if _, err := dbtx.Exec("UPDATE installment_plans SET paid_count = paid_count + 1 WHERE id = ?", planID); err != nil {
+		return domain.InstallmentPlan{}, err
+	}
+	now := time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600))
+	_, err = dbtx.Exec(`INSERT INTO transactions (id, title, category, category_tint, amount, account, date, when_text, is_income, is_today) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, fmt.Sprintf("tx-%d", now.UnixNano()), "จ่ายงวด "+updated.Name, "ผ่อนชำระ", "#e06c75", updated.Amount, accountName, now.Format("2006-01-02"), "วันนี้ · "+now.Format("15:04 น."), false, true)
+	if err != nil {
+		return domain.InstallmentPlan{}, err
+	}
+	if err := dbtx.Commit(); err != nil {
+		return domain.InstallmentPlan{}, err
+	}
+	updated.PaidCount++
 	return updated, nil
 }
 
 func (r *StorageRepository) DeletePlan(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	ok := r.localStore.DeletePlan(id)
 	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("DELETE FROM installment_plans WHERE id = ?", id)
+		res, err := r.sqlDB.Exec("DELETE FROM installment_plans WHERE id = ?", id)
+		if err != nil {
+			return false
+		}
+		n, _ := res.RowsAffected()
+		return n > 0
 	}
+	ok := r.localStore.DeletePlan(id)
 	return ok
 }
 
@@ -1043,7 +1268,14 @@ func (r *StorageRepository) ResetData(cleanSlate bool) domain.Database {
 		_, _ = r.sqlDB.Exec("DELETE FROM cards")
 		_, _ = r.sqlDB.Exec("DELETE FROM fixed_expenses")
 		_, _ = r.sqlDB.Exec("DELETE FROM installment_plans")
-		r.seedIfEmpty()
+		seedFlag := "0"
+		if cleanSlate {
+			seedFlag = "1"
+		}
+		_, _ = r.sqlDB.Exec("INSERT INTO app_settings (k, v) VALUES ('seed_disabled', ?) ON DUPLICATE KEY UPDATE v = ?", seedFlag, seedFlag)
+		if !cleanSlate {
+			r.seedIfEmpty()
+		}
 	}
 
 	return res

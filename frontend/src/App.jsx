@@ -139,21 +139,7 @@ class ErrorBoundary extends React.Component {
 export default function App() {
   const [tab, setTab] = useState('home');
   const [isMobileFrame, setIsMobileFrame] = useState(true);
-  const [summary, setSummary] = useState({
-    income: 45000,
-    spent: 0,
-    left: 45000,
-    spentPct: 0,
-    fixedTotal: 0,
-    fixedDone: 0,
-    fixedTotalCount: 0,
-    planMonthly: 0,
-    planCount: 0,
-    dues: [],
-    debts: [],
-    debtTotal: 0,
-    recent: [],
-  });
+  const [summary, setSummary] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [accountsData, setAccountsData] = useState({
     accounts: [],
@@ -183,6 +169,7 @@ export default function App() {
   const [editAccountTarget, setEditAccountTarget] = useState(null);
   const [editTransactionTarget, setEditTransactionTarget] = useState(null);
   const [loadingText, setLoadingText] = useState(null);
+  const [actionMessage, setActionMessage] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
   // Security / PIN Lock state
@@ -339,17 +326,23 @@ export default function App() {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 4000);
+    const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
 
   // Loading & Async Action Wrapper
   const runWithLoading = async (actionFn, message = 'กำลังดำเนินการ...') => {
     setLoadingText(message);
+    setActionMessage(null);
     try {
       await actionFn();
+      setActionMessage({ type: 'success', text: 'บันทึกสำเร็จ' });
+      setTimeout(() => setActionMessage(null), 2200);
+      return true;
     } catch (err) {
       console.error(`Error during action [${message}]:`, err);
+      setActionMessage({ type: 'error', text: err?.message || 'ทำรายการไม่สำเร็จ กรุณาลองใหม่' });
+      return false;
     } finally {
       setTimeout(() => {
         setLoadingText(null);
@@ -1092,6 +1085,12 @@ export default function App() {
 
       {/* Global Action Loading Popup */}
       {loadingText && <LoadingPopup message={loadingText} />}
+
+      {actionMessage && (
+        <div style={{ position: 'fixed', left: '50%', bottom: '84px', transform: 'translateX(-50%)', zIndex: 12000, padding: '10px 14px', borderRadius: '10px', background: actionMessage.type === 'error' ? '#7f3028' : '#315b3b', color: '#fff', font: "500 13px 'IBM Plex Sans Thai'", boxShadow: '0 8px 24px rgba(0,0,0,.35)', maxWidth: 'calc(100vw - 32px)', textAlign: 'center' }}>
+          {actionMessage.text}
+        </div>
+      )}
 
       {/* App Initial Database Loading Screen */}
       {initialLoading && <AppLoadingScreen />}

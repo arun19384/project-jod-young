@@ -57,11 +57,12 @@ type CreditCard struct {
 }
 
 type FixedExpense struct {
-	ID     string  `json:"id"`
-	Name   string  `json:"name"`
-	Amount float64 `json:"amt"`
-	Day    string  `json:"day"`
-	Done   bool    `json:"done"`
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Amount    float64 `json:"amt"`
+	Day       string  `json:"day"`
+	Done      bool    `json:"done"`
+	DoneMonth string  `json:"doneMonth,omitempty"`
 }
 
 type InstallmentPlan struct {

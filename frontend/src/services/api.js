@@ -1,10 +1,15 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
-function request(url, options = {}) {
+async function request(url, options = {}) {
   const headers = new Headers(options.headers || {});
   if (API_KEY) headers.set('X-API-Key', API_KEY);
-  return fetch(url, { ...options, headers });
+  const res = await fetch(url, { ...options, headers });
+  if (!res.ok) {
+    const data = await res.clone().json().catch(() => ({}));
+    throw new Error(data.error || data.message || `เกิดข้อผิดพลาดจากระบบ (${res.status})`);
+  }
+  return res;
 }
 
 export async function fetchBootstrap() {

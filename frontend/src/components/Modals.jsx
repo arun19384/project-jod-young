@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { displayTransactionWhen } from '../utils/transactionDate.js';
+import { displayTransactionWhen, isSystemTransaction, toDateInputValue } from '../utils/transactionDate.js';
 
 const modalOverlayStyle = {
   position: 'fixed',
@@ -684,6 +684,7 @@ export function EditTransactionModal({
   const [category, setCategory] = useState(tx.c || 'อื่นๆ');
   const [tint, setTint] = useState(tx.tint || '#8a8780');
   const [title, setTitle] = useState(tx.t || '');
+  const [transactionDate, setTransactionDate] = useState(() => toDateInputValue(tx.date));
   const [account, setAccount] = useState(
     (tx.acct === 'บัญชีหลัก' || tx.acct === 'Main' || tx.acct === 'เงินสด/บัญชีหลัก' || !tx.acct)
       ? 'บัญชีใช้จ่าย'
@@ -709,7 +710,7 @@ export function EditTransactionModal({
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e?.preventDefault();
     const parsedAmt = parseFloat(amount);
     if (isNaN(parsedAmt) || parsedAmt <= 0) {
@@ -722,15 +723,16 @@ export function EditTransactionModal({
         ? 'บัญชีใช้จ่าย'
         : account.trim();
 
-    onSave(tx.id, {
+    const ok = await onSave(tx.id, {
       t: finalTitle,
       c: category,
       tint: tint || '#8a8780',
       a: parsedAmt,
       acct: finalAccount,
       income: isIncome,
+      date: transactionDate,
     });
-    onClose();
+    if (ok !== false) onClose();
   };
 
   // Combine accounts and cards for selection
@@ -853,6 +855,12 @@ export function EditTransactionModal({
               บ.
             </span>
           </div>
+        </div>
+
+        {/* Category Selector Pills */}
+        <div>
+          <label style={labelStyle}>วันที่ทำรายการ</label>
+          <input type="date" value={transactionDate} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setTransactionDate(e.target.value)} style={inputStyle} />
         </div>
 
         {/* Category Selector Pills */}
@@ -2036,7 +2044,7 @@ export function WalletTransactionsModal({
                     >
                       {tx.income ? '+' : '-'}{fmt(tx.a)} บ.
                     </span>
-                    {onEditTransaction && !tx.isStatementLine && (
+                    {onEditTransaction && !tx.isStatementLine && !isSystemTransaction(tx) && (
                       <button
                         onClick={() => onEditTransaction(tx)}
                         style={{
@@ -2054,7 +2062,7 @@ export function WalletTransactionsModal({
                         ✎
                       </button>
                     )}
-                    {onDeleteTransaction && !tx.isStatementLine && (
+                    {onDeleteTransaction && !tx.isStatementLine && !isSystemTransaction(tx) && (
                       <button
                         onClick={() => {
                           if (window.confirm(`ต้องการลบรายการ "${tx.t}" หรือไม่?`)) {

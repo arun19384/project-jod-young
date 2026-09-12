@@ -13,26 +13,26 @@ type AppUseCase interface {
 	DeleteTransaction(id string) bool
 
 	GetDebts() []domain.Debt
-	AddDebt(debt domain.Debt) domain.Debt
+	AddDebt(debt domain.Debt) (domain.Debt, error)
 	ToggleDebt(id string) (domain.Debt, error)
 	DeleteDebt(id string) bool
 
 	GetAccounts() (accounts []domain.BankAccount, cards []domain.CreditCard, fixed []domain.FixedExpense, bankTotal float64)
-	AddAccount(acc domain.BankAccount) domain.BankAccount
+	AddAccount(acc domain.BankAccount) (domain.BankAccount, error)
 	UpdateAccount(id string, acc domain.BankAccount) (domain.BankAccount, error)
 	DeleteAccount(id string) bool
 	TransferAccount(fromID, toID string, amount float64, note string) error
 
-	AddCard(card domain.CreditCard) domain.CreditCard
+	AddCard(card domain.CreditCard) (domain.CreditCard, error)
 	PayCard(cardID, fromAccountID string, amount float64) (domain.CreditCard, error)
 	DeleteCard(id string) bool
 
-	AddFixed(fixed domain.FixedExpense) domain.FixedExpense
+	AddFixed(fixed domain.FixedExpense) (domain.FixedExpense, error)
 	ToggleFixed(id string) (domain.FixedExpense, error)
 	DeleteFixed(id string) bool
 
 	GetPlans() (monthlyTotal float64, remainingTotal float64, plans []domain.InstallmentPlan)
-	AddPlan(plan domain.InstallmentPlan) domain.InstallmentPlan
+	AddPlan(plan domain.InstallmentPlan) (domain.InstallmentPlan, error)
 	PayPlan(planID, fromAccountID string) (domain.InstallmentPlan, error)
 	DeletePlan(id string) bool
 
@@ -52,31 +52,31 @@ type ParserUseCase interface {
 type RepositoryPort interface {
 	GetSummary() domain.SummaryResponse
 	GetTransactions() []domain.Transaction
-	AddTransaction(tx domain.Transaction) domain.Transaction
+	AddTransaction(tx domain.Transaction) (domain.Transaction, error)
 	UpdateTransaction(id string, req domain.UpdateTransactionRequest) (domain.Transaction, error)
 	DeleteTransaction(id string) bool
 
 	GetDebts() []domain.Debt
-	AddDebt(debt domain.Debt) domain.Debt
+	AddDebt(debt domain.Debt) (domain.Debt, error)
 	ToggleDebt(id string) (domain.Debt, error)
 	DeleteDebt(id string) bool
 
 	GetAccounts() (accounts []domain.BankAccount, cards []domain.CreditCard, fixed []domain.FixedExpense, bankTotal float64)
-	AddAccount(acc domain.BankAccount) domain.BankAccount
+	AddAccount(acc domain.BankAccount) (domain.BankAccount, error)
 	UpdateAccount(id string, acc domain.BankAccount) (domain.BankAccount, error)
 	DeleteAccount(id string) bool
 	TransferAccount(fromID, toID string, amount float64, note string) error
 
-	AddCard(card domain.CreditCard) domain.CreditCard
+	AddCard(card domain.CreditCard) (domain.CreditCard, error)
 	PayCard(cardID, fromAccountID string, amount float64) (domain.CreditCard, error)
 	DeleteCard(id string) bool
 
-	AddFixed(fixed domain.FixedExpense) domain.FixedExpense
+	AddFixed(fixed domain.FixedExpense) (domain.FixedExpense, error)
 	ToggleFixed(id string) (domain.FixedExpense, error)
 	DeleteFixed(id string) bool
 
 	GetPlans() (monthlyTotal float64, remainingTotal float64, plans []domain.InstallmentPlan)
-	AddPlan(plan domain.InstallmentPlan) domain.InstallmentPlan
+	AddPlan(plan domain.InstallmentPlan) (domain.InstallmentPlan, error)
 	PayPlan(planID, fromAccountID string) (domain.InstallmentPlan, error)
 	DeletePlan(id string) bool
 

@@ -21,6 +21,21 @@ export function isTransactionToday(transaction) {
   return date ? sameDay(date, new Date()) : transaction?.today === true;
 }
 
+export function isTransactionInCurrentMonth(transaction) {
+  const date = parseTransactionDate(transaction?.date);
+  const now = new Date();
+  return date ? date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() : true;
+}
+
+export function toDateInputValue(value) {
+  const date = parseTransactionDate(value);
+  if (!date) return new Date().toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function displayTransactionWhen(transaction) {
   const date = parseTransactionDate(transaction?.date);
   const rawWhen = String(transaction?.when || '').trim();
@@ -29,4 +44,8 @@ export function displayTransactionWhen(transaction) {
   const time = rawWhen.match(/(\d{1,2}:\d{2}(?:\s*น\.)?)/)?.[1];
   const dateLabel = date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
   return time ? `${dateLabel} · ${time}` : dateLabel;
+}
+
+export function isSystemTransaction(transaction) {
+  return transaction?.c === 'โอนเงิน' || transaction?.c === 'ชำระบัตรเครดิต';
 }

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import AnalyticsChart from './AnalyticsChart.jsx';
 import { ReceiptPreviewModal, WalletTransactionsModal } from './Modals.jsx';
 import { getDaysUntilDue } from './BankTab.jsx';
-import { displayTransactionWhen } from '../utils/transactionDate.js';
+import { displayTransactionWhen, isSystemTransaction } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -117,6 +117,13 @@ export default function HomeTab({
   const debts = summary.debts || [];
   const debtTotal = summary.debtTotal || 0;
   const recent = summary.recent || [];
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const monthLabel = now.toLocaleDateString('th-TH', { month: 'long' });
+  const upcomingDues = dues.filter((d) => {
+    const days = getDaysUntilDue(d.day);
+    return days !== null && days <= 7;
+  });
 
   // Wallets data
   const accounts = accountsData?.accounts || [];
@@ -875,12 +882,12 @@ export default function HomeTab({
         ใกล้ครบกำหนด
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {dues.length === 0 ? (
+        {upcomingDues.length === 0 ? (
           <div style={{ padding: '14px', textAlign: 'center', color: '#78756e', fontSize: '12px', background: '#242321', borderRadius: '12px', border: '1px dashed #373630' }}>
             ไม่มีรายการที่ต้องจ่ายในเร็วๆ นี้
           </div>
         ) : (
-          dues.map((d, idx) => (
+          upcomingDues.map((d, idx) => (
             <div
               key={idx}
               style={{
@@ -1166,7 +1173,7 @@ export default function HomeTab({
               >
                 {e.income ? '+' : '−'}{fmt(e.a)}
               </div>
-              {onEditTransaction && (
+              {onEditTransaction && !isSystemTransaction(e) && (
                 <button
                   onClick={() => onEditTransaction(e)}
                   title="แก้ไขรายการนี้"
@@ -1184,7 +1191,7 @@ export default function HomeTab({
                   ✎
                 </button>
               )}
-              {onDeleteTransaction && (
+              {onDeleteTransaction && !isSystemTransaction(e) && (
                 <button
                   onClick={() => onDeleteTransaction(e.id)}
                   title="ลบรายการนี้"
@@ -1228,9 +1235,9 @@ export default function HomeTab({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '18px' }}>🗓️</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-            <div style={{ font: "600 15px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>กันยายน</div>
+            <div style={{ font: "600 15px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6' }}>{monthLabel}</div>
             <div style={{ font: "400 11px/1.2 'IBM Plex Sans Thai'", color: '#8a8780' }}>
-              วันที่ 9 · เหลือ 21 วัน
+              วันที่ {now.getDate()} · เหลือ {daysInMonth - now.getDate()} วัน
             </div>
           </div>
         </div>
@@ -1267,7 +1274,7 @@ export default function HomeTab({
               border: '1px solid #37362f',
             }}
           >
-            9 / 30
+            {now.getDate()} / {daysInMonth}
           </div>
         </div>
       </div>

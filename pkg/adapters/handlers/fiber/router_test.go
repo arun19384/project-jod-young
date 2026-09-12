@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
 
-	configAdapter "ai-in-my-area-backend/pkg/adapters/config"
 	fiberAdapter "ai-in-my-area-backend/pkg/adapters/handlers/fiber"
 	storageAdapter "ai-in-my-area-backend/pkg/adapters/storage"
 	"ai-in-my-area-backend/pkg/core/domain"
@@ -15,12 +16,26 @@ import (
 )
 
 func TestHexagonalFiberAPI(t *testing.T) {
-	// Bootstrap components
-	cfgPort := configAdapter.NewViperConfigAdapter()
-	cfg := cfgPort.GetConfig()
-	repo := storageAdapter.NewStorageRepository(cfg)
+	// Keep integration tests isolated from local .env and the production database.
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tempDir := t.TempDir()
+	if err := os.Chdir(tempDir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(originalWD) })
+
+	repo := storageAdapter.NewStorageRepository(domain.AppConfig{})
 	parserService := coreServices.NewParserService()
-	appService := coreServices.NewAppService(repo, parserService, cfgPort)
+	appService := coreServices.NewAppService(repo, parserService, nil)
+	if _, err := appService.AddAccount(domain.BankAccount{ID: "acct-test", Name: "บัญชีใช้จ่าย", Role: "ทดสอบ", Amount: 1000, Tint: "#fff"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := appService.AddAccount(domain.BankAccount{ID: "acct-reserve", Name: "บัญชี บัตรเครดิต", Role: "พักเงินจ่ายบัตร", Amount: 0, Tint: "#fff"}); err != nil {
+		t.Fatal(err)
+	}
 	app := fiberAdapter.NewFiberRouter(appService, parserService, "*")
 
 	// 1. Test Health Endpoint
@@ -122,5 +137,45 @@ func TestHexagonalFiberAPI(t *testing.T) {
 	_ = json.Unmarshal(body, &updatedTx)
 	if updatedTx.Amount != 150 || updatedTx.Title != "กาแฟดริป" {
 		t.Errorf("Expected amount 150 and title 'กาแฟดริป', got %f, %s", updatedTx.Amount, updatedTx.Title)
+	}
+
+	// A reserve transfer changes wallet balances but must not count as spending.
+	if err := appService.TransferAccount("acct-test", "acct-reserve", 200, "กันไว้จ่ายบัตร"); err != nil {
+		t.Fatalf("Transfer failed: %v", err)
+	}
+	summary := appService.GetSummary()
+	if summary.MonthlySpent != 150 {
+		t.Errorf("Expected spending 150 excluding transfer, got %f", summary.MonthlySpent)
+	}
+
+	// Card spending is an expense once; reserving and paying the card are not extra expenses.
+	card, err := appService.AddCard(domain.CreditCard{ID: "card-test", Name: "KTC Test", Limit: 10000, Tint: "#fff"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := appService.AddTransaction(domain.AddTransactionRequest{Name: "card lunch", Category: "อาหาร", Amount: 100, Account: card.Name}); err != nil {
+		t.Fatalf("Card spending failed: %v", err)
+	}
+	_, cards, _, _ := appService.GetAccounts()
+	if len(cards) != 1 || cards[0].Amount != 100 {
+		t.Fatalf("Expected card outstanding 100, got %+v", cards)
+	}
+	if _, err := appService.PayCard(card.ID, "acct-reserve", 100); err != nil {
+		t.Fatalf("Card payment failed: %v", err)
+	}
+	summary = appService.GetSummary()
+	if summary.MonthlySpent != 250 {
+		t.Errorf("Expected spending 250 without double-counting card payment, got %f", summary.MonthlySpent)
+	}
+	previousMonth := time.Now().AddDate(0, -1, 0).Format("2006-01-02")
+	if _, err := appService.AddTransaction(domain.AddTransactionRequest{Name: "old expense", Category: "อื่นๆ", Amount: 50, Account: "บัญชีใช้จ่าย", Date: previousMonth}); err != nil {
+		t.Fatalf("Historical transaction failed: %v", err)
+	}
+	if got := appService.GetSummary().MonthlySpent; got != 250 {
+		t.Errorf("Expected current-month spending 250, got %f", got)
+	}
+	accounts, cards, _, _ := appService.GetAccounts()
+	if cards[0].Amount != 0 || accounts[1].Amount != 100 {
+		t.Errorf("Expected settled card and reserve balance 100, got card=%f reserve=%f", cards[0].Amount, accounts[1].Amount)
 	}
 }
