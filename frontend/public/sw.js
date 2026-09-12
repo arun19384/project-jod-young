@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jod-ngen-v3';
+const CACHE_NAME = 'jod-ngen-v4-viewport';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -22,7 +22,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
-      return Promise.all(keys.map((key) => caches.delete(key)));
+      return Promise.all(keys.filter((key) => key.startsWith('jod-ngen-') && key !== CACHE_NAME).map((key) => caches.delete(key)));
     }).then(() => self.clients.claim())
   );
 });
@@ -30,6 +30,7 @@ self.addEventListener('activate', (event) => {
 // Fetch: Always Network-first for HTML, navigation, and API; Cache-first for hashed assets
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
 
   // Always network for API
   if (url.pathname.startsWith('/api')) {
@@ -47,7 +48,7 @@ self.addEventListener('fetch', (event) => {
   // Network-first for navigation / HTML requests so code updates are received immediately
   if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
     event.respondWith(
-      fetch(event.request).then((networkResponse) => {
+      fetch(event.request, { cache: 'no-cache' }).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));

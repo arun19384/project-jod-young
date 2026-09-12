@@ -262,28 +262,22 @@ export default function App() {
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
 
-    // Keep window.scrollY locked to 0 on iOS so page never shifts up
-    const handleScrollLock = () => {
-      if (window.scrollY !== 0) {
-        window.scrollTo(0, 0);
-      }
+    // Follow the visible viewport without fighting Safari's focus scrolling.
+    const viewport = window.visualViewport;
+    let viewportFrame;
+    const updateViewport = () => {
+      cancelAnimationFrame(viewportFrame);
+      viewportFrame = requestAnimationFrame(() => {
+        if (viewport && Math.abs(viewport.scale - 1) > 0.01) return;
+        document.documentElement.style.setProperty('--app-height', `${viewport?.height || window.innerHeight}px`);
+        document.documentElement.style.setProperty('--app-top', `${viewport?.offsetTop || 0}px`);
+      });
     };
-    window.addEventListener('scroll', handleScrollLock, { passive: true });
-
-    // When virtual keyboard closes or inputs blur, reset scroll position instantly
-    const handleFocusOut = () => {
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
-      }, 50);
-    };
-    window.addEventListener('focusout', handleFocusOut);
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleScrollLock);
-      window.visualViewport.addEventListener('scroll', handleScrollLock);
-    }
+    updateViewport();
+    window.addEventListener('resize', updateViewport);
+    window.addEventListener('pageshow', updateViewport);
+    viewport?.addEventListener('resize', updateViewport);
+    viewport?.addEventListener('scroll', updateViewport);
 
     const clockTimer = setInterval(() => {
       const now = new Date();
@@ -293,12 +287,11 @@ export default function App() {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
-      window.removeEventListener('scroll', handleScrollLock);
-      window.removeEventListener('focusout', handleFocusOut);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleScrollLock);
-        window.visualViewport.removeEventListener('scroll', handleScrollLock);
-      }
+      cancelAnimationFrame(viewportFrame);
+      window.removeEventListener('resize', updateViewport);
+      window.removeEventListener('pageshow', updateViewport);
+      viewport?.removeEventListener('resize', updateViewport);
+      viewport?.removeEventListener('scroll', updateViewport);
       clearInterval(clockTimer);
     };
   }, []);
@@ -671,13 +664,14 @@ export default function App() {
 
       {/* Main Scrollable View Area */}
       <div
+        className="app-scroll-content"
         style={{
           flex: '1 1 0%',
           minHeight: 0,
           overflowY: 'auto',
           overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
-          overscrollBehaviorY: 'contain',
+          overscrollBehaviorY: 'none',
           paddingBottom: '16px',
         }}
       >
@@ -835,9 +829,9 @@ export default function App() {
     <div
       style={{
         width: '100%',
-        height: isRealMobile ? '100dvh' : 'auto',
-        minHeight: isRealMobile ? '100dvh' : '100vh',
-        maxHeight: isRealMobile ? '100dvh' : 'none',
+        height: isRealMobile ? '100%' : 'auto',
+        minHeight: isRealMobile ? 0 : '100vh',
+        maxHeight: isRealMobile ? '100%' : 'none',
         background: isRealMobile ? '#262624' : '#191917',
         fontFamily: "'IBM Plex Sans Thai', system-ui, sans-serif",
         display: 'flex',
