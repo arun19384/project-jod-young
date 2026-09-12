@@ -28,8 +28,8 @@ type StorageRepository struct {
 func NewStorageRepository(cfg domain.AppConfig) ports.RepositoryPort {
 	// Register TLS for TiDB Cloud
 	_ = mysql.RegisterTLSConfig("tidbtls", &tls.Config{
-		ServerName:         "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
-		MinVersion:         tls.VersionTLS12,
+		ServerName: "gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
+		MinVersion: tls.VersionTLS12,
 	})
 
 	repo := &StorageRepository{
@@ -805,24 +805,59 @@ func (r *StorageRepository) TransferAccount(fromID, toID string, amount float64,
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	err := r.localStore.TransferAccount(fromID, toID, amount, note)
+	if amount <= 0 || fromID == "" || toID == "" || fromID == toID {
+		return fmt.Errorf("invalid transfer request")
+	}
+
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.TransferAccount(fromID, toID, amount, note)
+	}
+
+	dbtx, err := r.sqlDB.Begin()
 	if err != nil {
-		return err
+		return fmt.Errorf("begin transfer: %w", err)
+	}
+	defer dbtx.Rollback()
+
+	var from, to domain.BankAccount
+	if err := dbtx.QueryRow("SELECT id, name, amount FROM accounts WHERE id = ? OR name = ? LIMIT 1 FOR UPDATE", fromID, fromID).Scan(&from.ID, &from.Name, &from.Amount); err != nil {
+		return fmt.Errorf("sender account not found: %w", err)
+	}
+	if err := dbtx.QueryRow("SELECT id, name, amount FROM accounts WHERE id = ? OR name = ? LIMIT 1 FOR UPDATE", toID, toID).Scan(&to.ID, &to.Name, &to.Amount); err != nil {
+		return fmt.Errorf("recipient account not found: %w", err)
+	}
+	if from.ID == to.ID {
+		return fmt.Errorf("sender and recipient must be different")
+	}
+	if from.Amount < amount {
+		return fmt.Errorf("insufficient balance in sender account")
 	}
 
-	if r.isMySQL && r.sqlDB != nil {
-		_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount - ? WHERE id = ? OR name = ?", amount, fromID, fromID)
-		_, _ = r.sqlDB.Exec("UPDATE accounts SET amount = amount + ? WHERE id = ? OR name = ?", amount, toID, toID)
-
-		if len(r.localStore.db.Transactions) > 0 {
-			tx := r.localStore.db.Transactions[0]
-			_, _ = r.sqlDB.Exec(`INSERT INTO transactions 
-				(id, title, category, category_tint, amount, account, date, when_text, is_income, is_today) 
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				tx.ID, tx.Title, tx.Category, tx.CategoryTint, tx.Amount, tx.Account, tx.Date, tx.When, tx.IsIncome, tx.IsToday)
-		}
+	if _, err := dbtx.Exec("UPDATE accounts SET amount = amount - ? WHERE id = ?", amount, from.ID); err != nil {
+		return fmt.Errorf("debit sender account: %w", err)
+	}
+	if _, err := dbtx.Exec("UPDATE accounts SET amount = amount + ? WHERE id = ?", amount, to.ID); err != nil {
+		return fmt.Errorf("credit recipient account: %w", err)
 	}
 
+	bkkLoc := time.FixedZone("Asia/Bangkok", 7*3600)
+	now := time.Now().In(bkkLoc)
+	title := fmt.Sprintf("โอนไป %s", to.Name)
+	if note != "" {
+		title += " · " + note
+	}
+	txID := fmt.Sprintf("tx-%d", now.UnixNano())
+	_, err = dbtx.Exec(`INSERT INTO transactions
+		(id, title, category, category_tint, amount, account, date, when_text, is_income, is_today)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		txID, title, "โอนเงิน", "#7fa3c9", amount, from.Name,
+		now.Format("02 Jan"), "วันนี้ · "+now.Format("15:04 น."), false, true)
+	if err != nil {
+		return fmt.Errorf("record transfer: %w", err)
+	}
+	if err := dbtx.Commit(); err != nil {
+		return fmt.Errorf("commit transfer: %w", err)
+	}
 	return nil
 }
 
