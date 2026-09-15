@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Member Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 760px;
+        margin: 32px auto;
+        padding: 0 16px;
+        line-height: 1.5;
+      }
+
+      form {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+
+      input,
+      button {
+        padding: 10px;
+        font-size: 16px;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      section {
+        border: 1px solid #ddd;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Member Demo</h1>
+    <p>หน้าบ้านส่งข้อมูลไปหลังบ้าน และหลังบ้านบันทึกลง PostgreSQL</p>
+
+    <p id="message"></p>
+
+    <section>
+      <h2>สมัครสมาชิก</h2>
+      <form id="register-form">
+        <input name="name" placeholder="ชื่อ" required />
+        <input name="email" type="email" placeholder="อีเมล" required />
+        <input name="password" type="password" placeholder="รหัสผ่าน" required />
+        <button type="submit">สมัครสมาชิก</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>ล็อกอิน</h2>
+      <form id="login-form">
+        <input name="email" type="email" placeholder="อีเมล" required />
+        <input name="password" type="password" placeholder="รหัสผ่าน" required />
+        <button type="submit">ล็อกอิน</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>สมาชิกในฐานข้อมูล</h2>
+      <ul id="user-list"></ul>
+    </section>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
+
