@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jod-ngen-v5-safe-area';
+const CACHE_NAME = 'jod-ngen-v6-lazy-screens';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

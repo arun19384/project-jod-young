@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import AnalyticsChart from './AnalyticsChart.jsx';
 import { ReceiptPreviewModal, WalletTransactionsModal } from './Modals.jsx';
-import { getDaysUntilDue } from './BankTab.jsx';
+import { getDaysUntilDue } from '../utils/dueDate.js';
 import { displayTransactionWhen, isSystemTransaction } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');

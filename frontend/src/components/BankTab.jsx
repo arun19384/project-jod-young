@@ -1,29 +1,10 @@
 import React, { useState } from 'react';
 import AnimatedNumber from './AnimatedNumber.jsx';
 import { WalletTransactionsModal } from './Modals.jsx';
+import { getDaysUntilDue } from '../utils/dueDate.js';
+export { getDaysUntilDue } from '../utils/dueDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
-
-export function getDaysUntilDue(dayString) {
-  if (!dayString) return null;
-  const match = String(dayString).match(/\d+/);
-  if (!match) return null;
-  const targetDay = parseInt(match[0], 10);
-  if (isNaN(targetDay) || targetDay < 1 || targetDay > 31) return null;
-
-  const now = new Date();
-  const currentDay = now.getDate();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-
-  let targetDate = new Date(currentYear, currentMonth, targetDay);
-  if (targetDay < currentDay) {
-    targetDate = new Date(currentYear, currentMonth + 1, targetDay);
-  }
-
-  const diffTime = targetDate.getTime() - new Date(currentYear, currentMonth, currentDay).getTime();
-  return Math.round(diffTime / (1000 * 60 * 60 * 24));
-}
 
 export default function BankTab({
   data,

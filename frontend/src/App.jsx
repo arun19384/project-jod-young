@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import HomeTab from './components/HomeTab.jsx';
-import AddTab from './components/AddTab.jsx';
-import BankTab from './components/BankTab.jsx';
-import PlanTab from './components/PlanTab.jsx';
-import SearchModal from './components/SearchModal.jsx';
+
 import LockScreen from './components/LockScreen.jsx';
 import {
   EditBudgetModal,
@@ -22,11 +19,9 @@ import {
 import LoadingPopup from './components/LoadingPopup.jsx';
 import AppLoadingScreen from './components/AppLoadingScreen.jsx';
 import {
-  fetchBootstrap,
   addTransaction,
   updateTransaction,
   deleteTransaction,
-  fetchDebts,
   addDebt,
   toggleDebt,
   deleteDebt,
@@ -46,6 +41,14 @@ import {
   updateBudget,
   resetData,
 } from './services/api.js';
+
+import { lazyComponent } from './components/lazyComponent.jsx';
+import { useAppData } from './hooks/useAppData.js';
+
+const AddTab = lazyComponent(() => import('./components/AddTab.jsx'));
+const BankTab = lazyComponent(() => import('./components/BankTab.jsx'));
+const PlanTab = lazyComponent(() => import('./components/PlanTab.jsx'));
+const SearchModal = lazyComponent(() => import('./components/SearchModal.jsx'));
 
 // SVG Icons for Bottom Navigation
 function HomeIcon({ active }) {
@@ -139,20 +142,7 @@ class ErrorBoundary extends React.Component {
 export default function App() {
   const [tab, setTab] = useState('home');
   const [isMobileFrame, setIsMobileFrame] = useState(true);
-  const [summary, setSummary] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [accountsData, setAccountsData] = useState({
-    accounts: [],
-    cards: [],
-    fixed: [],
-    bankTotal: 0,
-  });
-  const [plansData, setPlansData] = useState({
-    monthlyTotal: 0,
-    remainingTotal: 0,
-    plans: [],
-  });
-  const [backendOnline, setBackendOnline] = useState(false);
+  const { summary, transactions, accountsData, plansData, backendOnline, initialLoading, loadData } = useAppData();
 
   // Modals state
   const [showBudgetModal, setShowBudgetModal] = useState(false);
@@ -170,7 +160,6 @@ export default function App() {
   const [editTransactionTarget, setEditTransactionTarget] = useState(null);
   const [loadingText, setLoadingText] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
-  const [initialLoading, setInitialLoading] = useState(true);
 
   // Security / PIN Lock state
   const [isLocked, setIsLocked] = useState(() => {
@@ -272,33 +261,6 @@ export default function App() {
       window.removeEventListener('orientationchange', handleResize);
       clearInterval(clockTimer);
     };
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const data = await fetchBootstrap();
-      setSummary(data.summary);
-      setTransactions(data.transactions);
-      setAccountsData({
-        accounts: data.accounts,
-        cards: data.cards,
-        fixed: data.fixed,
-        bankTotal: data.bankTotal,
-      });
-      setPlansData(data.plans);
-      setBackendOnline(true);
-    } catch (err) {
-      console.warn('API Error or connecting to local Go backend:', err);
-      setBackendOnline(false);
-    } finally {
-      setInitialLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   // Loading & Async Action Wrapper

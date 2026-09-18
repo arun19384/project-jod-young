@@ -12,8 +12,8 @@ async function request(url, options = {}) {
   return res;
 }
 
-export async function fetchBootstrap() {
-  const res = await request(`${API_BASE}/bootstrap`);
+export async function fetchBootstrap(options = {}) {
+  const res = await request(`${API_BASE}/bootstrap`, options);
   if (!res.ok) throw new Error('Failed to fetch bootstrap data');
   return res.json();
 }
