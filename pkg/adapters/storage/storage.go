@@ -179,6 +179,10 @@ func countsAsSpending(category string) bool {
 	return category != "โอนเงิน" && category != "ชำระบัตรเครดิต"
 }
 
+func isSystemTransaction(category string) bool {
+	return !countsAsSpending(category) || category == "ผ่อนชำระ"
+}
+
 func currentMonthKey() string {
 	return time.Now().In(time.FixedZone("Asia/Bangkok", 7*3600)).Format("2006-01")
 }
@@ -639,7 +643,7 @@ func (r *StorageRepository) UpdateTransaction(id string, req domain.UpdateTransa
 		if scanErr != nil {
 			return domain.Transaction{}, fmt.Errorf("transaction not found")
 		}
-		if !countsAsSpending(oldCategory) {
+		if isSystemTransaction(oldCategory) {
 			return domain.Transaction{}, fmt.Errorf("system transactions cannot be edited")
 		}
 
@@ -726,7 +730,7 @@ func (r *StorageRepository) DeleteTransaction(id string) bool {
 	if err := dbtx.QueryRow("SELECT amount, account, is_income, category FROM transactions WHERE id = ? FOR UPDATE", id).Scan(&amount, &account, &isIncome, &category); err != nil {
 		return false
 	}
-	if !countsAsSpending(category) {
+	if isSystemTransaction(category) {
 		return false
 	}
 	if isIncome {
@@ -895,28 +899,42 @@ func (r *StorageRepository) AddAccount(acc domain.BankAccount) (domain.BankAccou
 func (r *StorageRepository) UpdateAccount(id string, acc domain.BankAccount) (domain.BankAccount, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.isMySQL && r.sqlDB != nil {
-		res, err := r.sqlDB.Exec("UPDATE accounts SET amount = ?, name = COALESCE(NULLIF(?, ''), name), role = COALESCE(NULLIF(?, ''), role), tint = COALESCE(NULLIF(?, ''), tint) WHERE id = ?", acc.Amount, acc.Name, acc.Role, acc.Tint, id)
-		if err != nil {
-			return domain.BankAccount{}, fmt.Errorf("update account: %w", err)
-		}
-		changed, err := res.RowsAffected()
-		if err != nil || changed == 0 {
-			return domain.BankAccount{}, fmt.Errorf("account not found")
-		}
-		var updated domain.BankAccount
-		if err := r.sqlDB.QueryRow("SELECT id, name, role, amount, tint FROM accounts WHERE id = ?", id).Scan(&updated.ID, &updated.Name, &updated.Role, &updated.Amount, &updated.Tint); err != nil {
-			return domain.BankAccount{}, fmt.Errorf("read updated account: %w", err)
-		}
-		return updated, nil
+	if !r.isMySQL || r.sqlDB == nil {
+		return r.localStore.UpdateAccount(id, acc)
 	}
-	updated, err := r.localStore.UpdateAccount(id, acc)
+	dbtx, err := r.sqlDB.Begin()
 	if err != nil {
+		return domain.BankAccount{}, err
+	}
+	defer dbtx.Rollback()
+	var updated domain.BankAccount
+	if err := dbtx.QueryRow("SELECT id, name, role, amount, tint FROM accounts WHERE id = ? FOR UPDATE", id).Scan(&updated.ID, &updated.Name, &updated.Role, &updated.Amount, &updated.Tint); err != nil {
+		return domain.BankAccount{}, fmt.Errorf("read account: %w", err)
+	}
+	oldName := updated.Name
+	if acc.Name != "" {
+		updated.Name = acc.Name
+	}
+	if acc.Role != "" {
+		updated.Role = acc.Role
+	}
+	if acc.Tint != "" {
+		updated.Tint = acc.Tint
+	}
+	updated.Amount = acc.Amount
+	if _, err := dbtx.Exec("UPDATE accounts SET amount = ?, name = ?, role = ?, tint = ? WHERE id = ?", updated.Amount, updated.Name, updated.Role, updated.Tint, id); err != nil {
+		return domain.BankAccount{}, err
+	}
+	if updated.Name != oldName {
+		if _, err := dbtx.Exec("UPDATE transactions SET account = ? WHERE account = ?", updated.Name, oldName); err != nil {
+			return domain.BankAccount{}, err
+		}
+	}
+	if err := dbtx.Commit(); err != nil {
 		return domain.BankAccount{}, err
 	}
 	return updated, nil
 }
-
 func (r *StorageRepository) DeleteAccount(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()

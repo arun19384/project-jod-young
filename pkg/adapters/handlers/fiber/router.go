@@ -28,7 +28,7 @@ func NewFiberRouter(appUseCase ports.AppUseCase, parserUseCase ports.ParserUseCa
 	}))
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: allowOrigins,
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization, X-API-Key",
 		AllowMethods: "GET, POST, PUT, DELETE, OPTIONS",
 	}))
 	if len(apiKey) > 0 && apiKey[0] != "" {

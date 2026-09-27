@@ -71,5 +71,9 @@ export function displayTransactionWhen(transaction) {
 }
 
 export function isSystemTransaction(transaction) {
-  return transaction?.c === 'โอนเงิน' || transaction?.c === 'ชำระบัตรเครดิต';
+  return transaction?.c === 'โอนเงิน' || transaction?.c === 'ชำระบัตรเครดิต' || transaction?.c === 'ผ่อนชำระ';
+}
+
+export function countsAsSpending(transaction) {
+  return transaction?.c !== 'โอนเงิน' && transaction?.c !== 'ชำระบัตรเครดิต';
 }

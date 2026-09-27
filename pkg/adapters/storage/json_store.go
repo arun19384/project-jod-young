@@ -264,7 +264,7 @@ func (s *JSONFileStore) UpdateTransaction(id string, req domain.UpdateTransactio
 	if idx == -1 {
 		return domain.Transaction{}, errors.New("transaction not found")
 	}
-	if !countsAsSpending(oldTx.Category) {
+	if isSystemTransaction(oldTx.Category) {
 		return domain.Transaction{}, errors.New("system transactions cannot be edited")
 	}
 
@@ -381,7 +381,7 @@ func (s *JSONFileStore) DeleteTransaction(id string) bool {
 	if idx == -1 {
 		return false
 	}
-	if !countsAsSpending(target.Category) {
+	if isSystemTransaction(target.Category) {
 		return false
 	}
 
@@ -507,6 +507,11 @@ func (s *JSONFileStore) UpdateAccount(id string, acc domain.BankAccount) (domain
 		if a.ID == id {
 			if acc.Name != "" {
 				s.db.Accounts[i].Name = acc.Name
+				for j, tx := range s.db.Transactions {
+					if strings.EqualFold(tx.Account, a.Name) {
+						s.db.Transactions[j].Account = acc.Name
+					}
+				}
 			}
 			if acc.Role != "" {
 				s.db.Accounts[i].Role = acc.Role
