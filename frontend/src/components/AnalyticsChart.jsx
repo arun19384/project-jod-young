@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { isSystemTransaction, isTransactionInCurrentMonth } from '../utils/transactionDate.js';
+import { currentMonthKey, isSystemTransaction, thaiMonthLabel, transactionMonthKey } from '../utils/transactionDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
 
@@ -17,10 +17,17 @@ const DEFAULT_CATEGORY_COLORS = {
 export default function AnalyticsChart({ transactions = [] }) {
   const [viewMode, setViewMode] = useState('donut'); // 'donut' or 'bar'
   const [selectedCat, setSelectedCat] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState('current');
+  const thisMonth = currentMonthKey();
+  const activeMonth = selectedMonth === 'current' ? thisMonth : selectedMonth;
+  const monthOptions = useMemo(() => Array.from(new Set([
+    thisMonth,
+    ...transactions.map(transactionMonthKey).filter(Boolean),
+  ])).sort().reverse(), [transactions, thisMonth]);
 
   // Group transactions by category (only expenses, excluding income)
   const { categoryData, totalExpense } = useMemo(() => {
-    const expenseTx = transactions.filter((t) => !t.income && !isSystemTransaction(t) && isTransactionInCurrentMonth(t));
+    const expenseTx = transactions.filter((t) => !t.income && !isSystemTransaction(t) && transactionMonthKey(t) === activeMonth);
     const groups = {};
     let total = 0;
 
@@ -42,7 +49,7 @@ export default function AnalyticsChart({ transactions = [] }) {
 
     const list = Object.values(groups).sort((a, b) => b.amount - a.amount);
     return { categoryData: list, totalExpense: total };
-  }, [transactions]);
+  }, [transactions, activeMonth]);
 
   if (totalExpense === 0 || categoryData.length === 0) {
     return (
@@ -57,7 +64,14 @@ export default function AnalyticsChart({ transactions = [] }) {
           fontSize: '13px',
         }}
       >
-        📊 ยังไม่มีข้อมูลค่าใช้จ่ายสำหรับวิเคราะห์
+        <select
+          value={selectedMonth}
+          onChange={(event) => setSelectedMonth(event.target.value)}
+          style={{ background: '#20201e', color: '#d0cdc2', border: '1px solid #45433c', borderRadius: '8px', padding: '6px 9px', marginBottom: '12px' }}
+        >
+          {monthOptions.map((key) => <option key={key} value={key === thisMonth ? 'current' : key}>{thaiMonthLabel(key)}{key === thisMonth ? ' · เดือนใหม่/ปัจจุบัน' : ''}</option>)}
+        </select>
+        <div>📊 ยังไม่มีข้อมูลค่าใช้จ่ายของ{thaiMonthLabel(activeMonth)}</div>
       </div>
     );
   }
@@ -102,7 +116,7 @@ export default function AnalyticsChart({ transactions = [] }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ font: "600 14.5px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>📊 สถิติค่าใช้จ่าย</span>
+            <span>📊 สถิติค่าใช้จ่าย · {thaiMonthLabel(activeMonth)}</span>
             <span style={{ fontSize: '11.5px', color: '#8a8780', fontWeight: '400' }}>
               ({categoryData.length} หมวดหมู่)
             </span>
@@ -112,7 +126,15 @@ export default function AnalyticsChart({ transactions = [] }) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', background: '#20201e', padding: '3px', borderRadius: '10px', border: '1px solid #383733' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#20201e', padding: '3px', borderRadius: '10px', border: '1px solid #383733' }}>
+          <select
+            aria-label="เลือกเดือนสถิติ"
+            value={selectedMonth}
+            onChange={(event) => { setSelectedMonth(event.target.value); setSelectedCat(null); }}
+            style={{ maxWidth: '105px', background: '#20201e', color: '#a8a49a', border: 'none', fontSize: '10px', padding: '4px' }}
+          >
+            {monthOptions.map((key) => <option key={key} value={key === thisMonth ? 'current' : key}>{thaiMonthLabel(key)}</option>)}
+          </select>
           <button
             onClick={() => setViewMode('donut')}
             className="pressable"

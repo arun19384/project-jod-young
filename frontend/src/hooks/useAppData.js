@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchBootstrap } from '../services/api.js';
 import { createRefreshController } from '../utils/refreshController.js';
+import { splitCardBalance } from '../utils/cardCycle.js';
 
 const emptyAccounts = { accounts: [], cards: [], fixed: [], bankTotal: 0 };
 const emptyPlans = { monthlyTotal: 0, remainingTotal: 0, plans: [] };
@@ -44,11 +45,19 @@ export function useAppData() {
     };
   }, []);
 
+  const transactions = data?.transactions ?? [];
+  const cards = (data?.cards ?? []).map((card) => splitCardBalance(card, transactions));
+  const cardAmounts = new Map(cards.map((card) => [card.name, card.amt]));
+  const summary = data?.summary ? {
+    ...data.summary,
+    dues: (data.summary.dues || []).map((due) => cardAmounts.has(due.name) ? { ...due, amt: cardAmounts.get(due.name) } : due),
+  } : null;
+
   return {
-    summary: data?.summary ?? null,
-    transactions: data?.transactions ?? [],
+    summary,
+    transactions,
     accountsData: data ? {
-      accounts: data.accounts, cards: data.cards, fixed: data.fixed, bankTotal: data.bankTotal,
+      accounts: data.accounts, cards, fixed: data.fixed, bankTotal: data.bankTotal,
     } : emptyAccounts,
     plansData: data?.plans ?? emptyPlans,
     backendOnline,

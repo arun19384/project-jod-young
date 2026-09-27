@@ -27,6 +27,22 @@ export function isTransactionInCurrentMonth(transaction) {
   return date ? date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() : true;
 }
 
+export function transactionMonthKey(transaction) {
+  const date = parseTransactionDate(transaction?.date);
+  if (!date) return null;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function currentMonthKey(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function thaiMonthLabel(monthKey) {
+  const match = String(monthKey || '').match(/^(\d{4})-(\d{2})$/);
+  if (!match) return 'เดือนนี้';
+  return new Date(Number(match[1]), Number(match[2]) - 1, 1).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+}
+
 export function todayDateInputValue() {
   const now = new Date();
   const year = now.getFullYear();

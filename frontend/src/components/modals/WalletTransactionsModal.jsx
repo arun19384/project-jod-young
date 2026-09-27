@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { displayTransactionWhen, isSystemTransaction, toDateInputValue, todayDateInputValue } from '../../utils/transactionDate.js';
+import { isAfterLatestCardCutoff } from '../../utils/cardCycle.js';
 
 import { modalOverlayStyle, modalBoxStyle, inputStyle, labelStyle, primaryBtnStyle, cancelBtnStyle, SheetGrabber } from './shared.jsx';
 import { ReceiptPreviewModal } from './ReceiptPreviewModal.jsx';
@@ -55,7 +56,7 @@ export function WalletTransactionsModal({
     const acct = normalizeWalletKey(tx.acct);
     if (isCard) {
       if (isCardSystemTx(tx)) return false;
-      return cardMatchKeys.has(acct);
+      return cardMatchKeys.has(acct) && !isAfterLatestCardCutoff(tx, wallet.cut);
     }
     if (acct === targetName || acct === targetId) return true;
     if ((targetName === 'บัญชีใช้จ่าย' || targetName === 'บัญชีหลัก') && (acct === 'บัญชีใช้จ่าย' || acct === 'บัญชีหลัก' || acct === 'main' || acct === 'เงินสด/บัญชีหลัก')) return true;
