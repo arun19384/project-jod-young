@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import AnimatedNumber from './AnimatedNumber.jsx';
 import { WalletTransactionsModal } from './Modals.jsx';
 import { getDaysUntilDue } from '../utils/dueDate.js';
-import { isAfterLatestCardCutoff } from '../utils/cardCycle.js';
 export { getDaysUntilDue } from '../utils/dueDate.js';
 
 const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
@@ -238,7 +237,7 @@ export default function BankTab({
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ font: "500 15px/1.3 'IBM Plex Sans Thai'", color: '#f0eee6' }}>{c.name}</span>
                         <span style={{ fontSize: '10px', color: '#9b8ec4', background: 'rgba(155,142,196,0.15)', padding: '1px 6px', borderRadius: '4px', fontWeight: '500' }}>
-                          📄 ดูรายการ ({transactions.filter((tx) => (tx.acct === c.name || tx.acct === c.id) && !isAfterLatestCardCutoff(tx, c.cut)).length})
+                          📄 ดูรายการ ({transactions.filter((tx) => tx.acct === c.name || tx.acct === c.id).length})
                         </span>
                       </div>
                       <div style={{ font: "400 11px/1.3 'IBM Plex Mono', monospace", color: '#78756e', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
@@ -268,6 +267,7 @@ export default function BankTab({
                       <div style={{ font: "600 19px/1 'IBM Plex Sans Thai'", color: '#e8e5da', fontVariantNumeric: 'tabular-nums' }}>
                         {fmt(c.amt)}
                       </div>
+                      {c.pendingAmount > 0 && <div style={{ fontSize: '10.5px', color: '#c9a227' }}>รอบหน้า +{fmt(c.pendingAmount)} บ.</div>}
                       <div
                         style={{
                           font: "500 10.5px/1 'IBM Plex Sans Thai'",

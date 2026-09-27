@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { displayTransactionWhen, isSystemTransaction, toDateInputValue, todayDateInputValue } from '../../utils/transactionDate.js';
-import { isAfterLatestCardCutoff } from '../../utils/cardCycle.js';
+import { isNextMonthKtcCharge } from '../../utils/cardCycle.js';
 
 import { modalOverlayStyle, modalBoxStyle, inputStyle, labelStyle, primaryBtnStyle, cancelBtnStyle, SheetGrabber } from './shared.jsx';
 import { ReceiptPreviewModal } from './ReceiptPreviewModal.jsx';
@@ -56,7 +56,7 @@ export function WalletTransactionsModal({
     const acct = normalizeWalletKey(tx.acct);
     if (isCard) {
       if (isCardSystemTx(tx)) return false;
-      return cardMatchKeys.has(acct) && !isAfterLatestCardCutoff(tx, wallet.cut);
+      return cardMatchKeys.has(acct);
     }
     if (acct === targetName || acct === targetId) return true;
     if ((targetName === 'บัญชีใช้จ่าย' || targetName === 'บัญชีหลัก') && (acct === 'บัญชีใช้จ่าย' || acct === 'บัญชีหลัก' || acct === 'main' || acct === 'เงินสด/บัญชีหลัก')) return true;
@@ -76,7 +76,7 @@ export function WalletTransactionsModal({
 
   // 4. If card has an initial balance set during card creation that exceeds recorded transactions
   const recordedOut = walletTxs.filter((t) => !t.income && !isCardSystemTx(t)).reduce((sum, t) => sum + (t.a || 0), 0);
-  const cardInitialAmt = Math.abs(wallet.amt ?? wallet.used ?? 0);
+  const cardInitialAmt = Math.abs(wallet.totalOutstanding ?? wallet.amt ?? wallet.used ?? 0);
   const diff = cardInitialAmt - recordedOut;
   if (isCard && diff > 0.01) {
     walletTxs.push({
@@ -114,6 +114,7 @@ export function WalletTransactionsModal({
 
   const fmt = (n) => Math.round(n || 0).toLocaleString('en-US');
   const cardAmount = Math.abs(wallet.amt ?? wallet.used ?? 0);
+  const pendingAmount = wallet.pendingAmount || 0;
 
   return (
     <div className="wallet-detail-overlay" style={modalOverlayStyle} onClick={onClose}>
@@ -257,6 +258,11 @@ export function WalletTransactionsModal({
                 <div style={{ font: "600 28px/1.2 'IBM Plex Sans Thai'", color: '#f0eee6', fontVariantNumeric: 'tabular-nums', marginTop: '4px' }}>
                   {isCard ? fmt(cardAmount) : fmt(wallet.amt)} <span style={{ fontSize: '14px', fontWeight: '400', color: '#78756e' }}>บาท</span>
                 </div>
+                {isCard && pendingAmount > 0 && (
+                  <div style={{ fontSize: '11.5px', color: '#c9a227', marginTop: '5px' }}>
+                    ยอดรอบหน้า {fmt(pendingAmount)} บาท · ยังไม่รวมยอดชำระ
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -537,6 +543,11 @@ export function WalletTransactionsModal({
                       </div>
                       <div style={{ font: "400 11px 'IBM Plex Sans Thai'", color: '#78756e', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                         <span>{displayTransactionWhen(tx)}</span>
+                        {isCard && isNextMonthKtcCharge(tx, wallet) && (
+                          <span style={{ fontSize: '9.5px', color: '#c9a227', background: 'rgba(201,162,39,0.15)', padding: '1px 5px', borderRadius: '4px' }}>
+                            รอบหน้า · ไม่รวมยอดชำระ
+                          </span>
+                        )}
                         {tx.isStatementLine && (
                           <span style={{ fontSize: '9.5px', color: '#9b8ec4', background: 'rgba(155,142,196,0.12)', padding: '1px 5px', borderRadius: '4px' }}>
                             📋 Statement บัตร
